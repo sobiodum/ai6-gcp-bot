@@ -1,0 +1,60 @@
+# File: config/indicators.yaml
+# Path: forex_trading_system/config/indicators.yaml
+
+indicators:
+  sma:
+    enabled: true
+    params:
+      periods: [20, 50]
+    visualize: true
+
+  ichimoku:
+    enabled: true
+    params:
+      conversion_line_period: 9
+      base_line_period: 26
+      lagging_span_period: 52
+      displacement: 26
+    visualize: true
+
+  rsi:
+    enabled: true
+    params:
+      period: 14
+      overbought: 70
+      oversold: 30
+    visualize: true
+
+  macd:
+    enabled: true
+    params:
+      fastperiod: 12
+      slowperiod: 26
+      signalperiod: 9
+    visualize: true
+
+  bollinger:
+    enabled: true
+    params:
+      timeperiod: 20
+      nbdevup: 2
+      nbdevdn: 2
+    visualize: true
+
+  atr:
+    enabled: true
+    params:
+      period: 14
+    visualize: true
+
+  dmi:
+    enabled: true
+    params:
+      period: 14
+    visualize: true
+
+  adx:
+    enabled: true
+    params:
+      period: 14
+    visualize: true
