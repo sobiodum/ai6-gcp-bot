@@ -1,0 +1,10 @@
+numpy
+pandas
+stable-baselines3
+optuna
+google-cloud-storage
+tensorboard
+PyYAML
+gymnasium
+sqlite3
+optuna-dashboard

@@ -24,7 +24,7 @@ class IndicatorConfig:
 class IndicatorManager:
     """Manages calculation and caching of technical indicators."""
 
-    def __init__(self, config_path: str, cache_dir: str):
+    def __init__(self):
         """
         Initialize indicator manager with configuration.
 
@@ -32,25 +32,18 @@ class IndicatorManager:
             config_path: Path to indicator configuration file
             cache_dir: Directory for caching calculated indicators
         """
-        self.config_path = config_path
-        self.cache_dir = cache_dir
-        # If config_path is a directory, append indicators.yaml
-        if os.path.isdir(config_path):
-            self.config_path = os.path.join(config_path, "indicators.yaml")
-        else:
-            self.config_path = config_path
+        self.indicator_params = {
+            'sma': {'periods': [20, 50]},
+            'rsi': {'period': 14},
+            'macd': {'fastperiod': 12, 'slowperiod': 26, 'signalperiod': 9},
+            'bollinger': {'timeperiod': 20, 'nbdevup': 2, 'nbdevdn': 2},
+            'atr': {'period': 14},
+            'adx': {'period': 14},
+            'dmi': {'period': 14},
+        }
+      
 
-        # Try relative to project root if not found
-        if not os.path.exists(self.config_path):
-            project_root = Path(__file__).parent.parent
-            self.config_path = os.path.join(
-                project_root, "config", "indicators.yaml")
-
-        self.cache_dir = cache_dir
-        self.load_config()
-
-        # Create cache directory if it doesn't exist
-        os.makedirs(cache_dir, exist_ok=True)
+    
 
     def load_config(self):
         """Load indicator configuration from YAML file."""
@@ -68,104 +61,148 @@ class IndicatorManager:
     def calculate_indicators(
         self,
         df: pd.DataFrame,
-        use_cache: bool = True
+        selected_indicators: list = None
     ) -> pd.DataFrame:
         """
-        Calculate all enabled technical indicators.
+        Calculate technical indicators on daily timeframe and resample back.
 
         Args:
-            df: Input DataFrame with OHLCV data
-            use_cache: Whether to use cached indicators
+            df: DataFrame with OHLCV data at original timeframe
+            selected_indicators: List of indicators to calculate (defaults to all)
         """
-        df_with_indicators = df.copy()
-        daily_df = df.resample('D').agg({
-            'open': 'first',
-            'high': 'max',
-            'low': 'min',
-            'close': 'last',
-            'volume': 'sum'
-        })
+        if selected_indicators is None:
+            selected_indicators = ['sma', 'rsi', 'macd', 'bollinger', 'atr', 'adx', 'dmi', 'ichimoku']
 
-        daily_with_indicators = daily_df.copy()
+        try:
+            # Store original DataFrame
+            original_df = df.copy()
 
-        # Add SMA calculations
-        if self.indicators['sma'].enabled:
-            for period in self.indicators['sma'].params['periods']:
-                daily_with_indicators[f'sma_{period}'] = talib.SMA(
-                    daily_with_indicators['close'],
-                    timeperiod=period
+            # Resample to daily timeframe
+            daily_df = df.resample('D').agg({
+                'open': 'first',
+                'high': 'max',
+                'low': 'min',
+                'close': 'last',
+                'volume': 'sum'
+            }).dropna()
+
+            # Calculate indicators on daily data
+            daily_indicators = daily_df.copy()
+
+            # SMA calculations
+            if 'sma' in selected_indicators:
+                for period in self.indicator_params['sma']['periods']:
+                    daily_indicators[f'sma_{period}'] = talib.SMA(
+                        daily_indicators['close'],
+                        timeperiod=period
+                    )
+
+            # RSI
+            if 'rsi' in selected_indicators:
+                daily_indicators['rsi'] = talib.RSI(
+                    daily_indicators['close'],
+                    timeperiod=self.indicator_params['rsi']['period']
                 )
 
-        # Calculate each enabled indicator
-        if self.indicators['ichimoku'].enabled:
-            self._add_ichimoku(daily_with_indicators,
-                               self.indicators['ichimoku'].params)
+            # MACD
+            if 'macd' in selected_indicators:
+                macd, signal, hist = talib.MACD(
+                    daily_indicators['close'],
+                    **self.indicator_params['macd']
+                )
+                daily_indicators['macd'] = macd
+                daily_indicators['macd_signal'] = signal
+                daily_indicators['macd_hist'] = hist
 
-        if self.indicators['rsi'].enabled:
-            daily_with_indicators['rsi'] = talib.RSI(
-                daily_with_indicators['close'],
-                timeperiod=self.indicators['rsi'].params['period']
-            )
+            # Bollinger Bands
+            if 'bollinger' in selected_indicators:
+                upper, middle, lower = talib.BBANDS(
+                    daily_indicators['close'],
+                    **self.indicator_params['bollinger']
+                )
+                daily_indicators['bb_upper'] = upper
+                daily_indicators['bb_middle'] = middle
+                daily_indicators['bb_lower'] = lower
+                # Calculate Bollinger Bandwidth
+                daily_indicators['bb_bandwidth'] = ((upper - lower) / middle) * 100
 
-        if self.indicators['macd'].enabled:
-            macd, signal, hist = talib.MACD(
-                daily_with_indicators['close'],
-                **self.indicators['macd'].params
-            )
-            daily_with_indicators['macd'] = macd
-            daily_with_indicators['macd_signal'] = signal
-            daily_with_indicators['macd_hist'] = hist
+                # Calculate Bollinger %B
+                daily_indicators['bb_percent'] = ((daily_indicators['close'] - lower) / (upper - lower)) * 100
 
-        if self.indicators['bollinger'].enabled:
-            upper, middle, lower = talib.BBANDS(
-                daily_with_indicators['close'],
-                **self.indicators['bollinger'].params
-            )
-            daily_with_indicators['bb_upper'] = upper
-            daily_with_indicators['bb_middle'] = middle
-            daily_with_indicators['bb_lower'] = lower
+            # ATR
+            if 'atr' in selected_indicators:
+                daily_indicators['atr'] = talib.ATR(
+                    daily_indicators['high'],
+                    daily_indicators['low'],
+                    daily_indicators['close'],
+                    timeperiod=self.indicator_params['atr']['period']
+                )
 
-        # Add other indicators (ATR, DMI, ADX)
-        if self.indicators['atr'].enabled:
-            daily_with_indicators['atr'] = talib.ATR(
-                daily_with_indicators['high'],
-                daily_with_indicators['low'],
-                daily_with_indicators['close'],
-                timeperiod=self.indicators['atr'].params['period']
-            )
+            # DMI
+            if 'dmi' in selected_indicators:
+                daily_indicators['plus_di'] = talib.PLUS_DI(
+                    daily_indicators['high'],
+                    daily_indicators['low'],
+                    daily_indicators['close'],
+                    timeperiod=self.indicator_params['dmi']['period']
+                )
+                daily_indicators['minus_di'] = talib.MINUS_DI(
+                    daily_indicators['high'],
+                    daily_indicators['low'],
+                    daily_indicators['close'],
+                    timeperiod=self.indicator_params['dmi']['period']
+                )
 
-        if self.indicators['dmi'].enabled:
-            daily_with_indicators['plus_di'] = talib.PLUS_DI(
-                daily_with_indicators['high'],
-                daily_with_indicators['low'],
-                daily_with_indicators['close'],
-                timeperiod=self.indicators['dmi'].params['period']
-            )
-            daily_with_indicators['minus_di'] = talib.MINUS_DI(
-                daily_with_indicators['high'],
-                daily_with_indicators['low'],
-                daily_with_indicators['close'],
-                timeperiod=self.indicators['dmi'].params['period']
-            )
+            # ADX
+            if 'adx' in selected_indicators:
+                daily_indicators['adx'] = talib.ADX(
+                    daily_indicators['high'],
+                    daily_indicators['low'],
+                    daily_indicators['close'],
+                    timeperiod=self.indicator_params['adx']['period']
+                )
+            if 'ichimoku' in selected_indicators:
+                self._add_ichimoku(daily_indicators)
 
-        if self.indicators['adx'].enabled:
-            daily_with_indicators['adx'] = talib.ADX(
-                daily_with_indicators['high'],
-                daily_with_indicators['low'],
-                daily_with_indicators['close'],
-                timeperiod=self.indicators['adx'].params['period']
-            )
-        # Copy daily indicators back to original frequency
-        indicator_columns = [col for col in daily_with_indicators.columns
-                             if col not in ['open', 'high', 'low', 'close', 'volume']]
-        # Forward fill daily values to original frequency
-        df_with_indicators = df.copy()
-        for col in indicator_columns:
-            df_with_indicators[col] = daily_with_indicators[col].reindex(
-                df_with_indicators.index, method='ffill'
-            )
+            # Get indicator columns (exclude OHLCV)
+            indicator_columns = [col for col in daily_indicators.columns 
+                               if col not in ['open', 'high', 'low', 'close', 'volume']]
 
-        return df_with_indicators
+            # Drop any rows with NaN values in indicators
+            daily_indicators = daily_indicators.dropna()
+
+            # Create final DataFrame with original data
+            result_df = original_df.copy()
+
+            # Add each indicator back to original timeframe
+            for col in indicator_columns:
+                # Reindex to original timeframe and forward fill
+                result_df[col] = daily_indicators[col].reindex(
+                    original_df.index, method='ffill'
+                )
+
+            # # Final forward fill and backward fill for any remaining NaNs
+            # result_df[indicator_columns] = result_df[indicator_columns].ffill()
+
+            print(f"Added indicators: {indicator_columns}")
+            print(f"Original shape: {original_df.shape}, Final shape: {result_df.shape}")
+            
+            return result_df
+
+        except Exception as e:
+            print(f"Error calculating indicators: {str(e)}")
+            print(f"Shape of input DataFrame: {df.shape}")
+            print(f"Available columns: {df.columns.tolist()}")
+            print(f"Date range: {df.index[0]} to {df.index[-1]}")
+            raise
+
+    def get_available_indicators(self) -> list:
+        """Get list of available indicators."""
+        return list(self.indicator_params.keys())
+
+    def update_params(self, new_params: dict) -> None:
+        """Update indicator parameters."""
+        self.indicator_params.update(new_params)
 
     # def _add_ichimoku(self, df: pd.DataFrame, params: Dict) -> None:
     #     """Calculate Ichimoku Cloud indicators."""
@@ -200,7 +237,7 @@ class IndicatorManager:
     #     # Calculate Chikou Span (Lagging Span)
     #     df['chikou_span'] = df['close'].shift(-params['displacement'])
 
-    def _add_ichimoku(self, df: pd.DataFrame, params: Dict) -> None:
+    def _add_ichimoku(self, df: pd.DataFrame) -> None:
         """Calculate Ichimoku Cloud indicators using pandas_ta."""
 
         # Calculate ichimoku with append=True to add columns directly to dataframe

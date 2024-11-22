@@ -1,367 +1,199 @@
-# File: visualization/chart_manager.py
-# Path: forex_trading_system/visualization/chart_manager.py
-
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 from typing import Optional
 from datetime import datetime
+import matplotlib.pyplot as plt
+
+import matplotlib.dates as mdates
 
 
 class ChartManager:
-    """Manages creation and display of trading charts using plotly."""
-
-    def create_charts(
+    def chart(
         self,
         df: pd.DataFrame,
+        ticker: str = 'No ticker provided',
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
         show_candlesticks: bool = False
-    ) -> None:
-        """
-        Create comprehensive trading analysis charts.
+            
 
-        Args:
-            df: DataFrame containing price data and indicators
-            start_time: Optional start time filter
-            end_time: Optional end time filter
-            show_candlesticks: Whether to show candlesticks (True) or line chart (False)
-        """
+  
+    ) -> None:
         # Filter data if time range is specified
         if start_time:
             df = df[df.index >= pd.Timestamp(start_time)]
         if end_time:
             df = df[df.index <= pd.Timestamp(end_time)]
 
-        # Create subplots for different indicators
-        fig = make_subplots(
-            rows=7, cols=1,
-            subplot_titles=(
-                'Price with SMAs',
-                'MACD',
-                'RSI',
-                'Bollinger Bands',
-                'ADX/DMI',
-                'Ichimoku Cloud',
-                'ATR'
-            ),
-            vertical_spacing=0.05,
-            row_heights=[1, 0.7, 0.7, 1, 0.7, 1, 0.7]
+        # Create the figure and subplots
+        fig = plt.figure(figsize=(12, 20))
+        plt.style.use('seaborn-v0_8-whitegrid')
+
+        gs = fig.add_gridspec(9, 1, height_ratios=[2, 2, 1,1, 1, 1, 1,1,1])
+        ax1 = fig.add_subplot(gs[0])          # Candlestick chart
+        ax2 = fig.add_subplot(gs[1], sharex=ax1)  # Ichimoku Cloud
+        ax3 = fig.add_subplot(gs[2], sharex=ax1)  # MACD
+        ax4 = fig.add_subplot(gs[3], sharex=ax1)  # RSI
+        ax5 = fig.add_subplot(gs[4], sharex=ax1)  # Bollinger Bandwidth
+        ax7 = fig.add_subplot(gs[5], sharex=ax1)  # ATR
+        ax8 = fig.add_subplot(gs[6], sharex=ax1)  # ADX/DMI
+        ax9 = fig.add_subplot(gs[7], sharex=ax1)  # %B
+        ax10 = fig.add_subplot(gs[8], sharex=ax1)  # Bollinger bandwidth
+
+
+
+
+        ax1.plot(df.index, df['close'], linewidth=0.5,
+                label=ticker, color='black')
+        ax1.set_title("EUR/USD")
+        ax1.set_xlabel("Date")
+        ax1.set_ylabel("Price")
+
+        # Second subplot (Ichimoku Cloud)
+
+        ax2.set_title("Ichimoku Cloud")
+        ax2.plot(df.index, df['tenkan_sen'], linewidth=0.5,
+                label='Conversion Line (Tenkan-sen)', color='blue')
+        ax2.plot(df.index, df['kijun_sen'], linewidth=0.5,
+                label='Base Line (Kijun-sen)', color='red')
+        ax2.plot(df.index, df['senkou_span_a'],
+                linewidth=0.5, label='Senkou Span A', color='green')
+        ax2.plot(df.index, df['senkou_span_b'],
+                linewidth=0.5, label='Senkou Span B', color='orange')
+        ax2.plot(df.index, df['close'], linewidth=1.5,
+                label='Close Price', color='black')
+        ax2.fill_between(
+            df.index,
+            df['senkou_span_a'],
+            df['senkou_span_b'],
+            where=(df['senkou_span_a'] >= df['senkou_span_b']),
+            color='green',
+            alpha=0.3
+        )
+        ax2.fill_between(
+            df.index,
+            df['senkou_span_a'],
+            df['senkou_span_b'],
+            where=(df['senkou_span_a'] < df['senkou_span_b']),
+            color='red',
+            alpha=0.3
         )
 
-        # 1. Price and SMAs
-        if show_candlesticks:
-            fig.add_trace(
-                go.Candlestick(
-                    x=df.index,
-                    open=df['open'],
-                    high=df['high'],
-                    low=df['low'],
-                    close=df['close'],
-                    name='Price'
-                ),
-                row=1, col=1
-            )
-        else:
-            fig.add_trace(
-                go.Scatter(
-                    x=df.index,
-                    y=df['close'],
-                    name='Close Price',
-                    line=dict(color='black', width=1)
-                ),
-                row=1, col=1
-            )
+        ax2.set_xlabel("Date")
+        ax2.set_ylabel("Price")
+        ax2.legend()
 
-        # Add SMAs
-        for period in [20, 50]:
-            fig.add_trace(
-                go.Scatter(
-                    x=df.index,
-                    y=df[f'sma_{period}'],
-                    name=f'SMA {period}',
-                    line=dict(width=1)
-                ),
-                row=1, col=1
-            )
+        # (MACD)
 
-        # 2. MACD
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['macd'],
-                name='MACD',
-                line=dict(color='blue', width=1)
-            ),
-            row=2, col=1
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['macd_signal'],
-                name='Signal',
-                line=dict(color='red', width=1)
-            ),
-            row=2, col=1
-        )
-        fig.add_trace(
-            go.Bar(
-                x=df.index,
-                y=df['macd_hist'],
-                name='MACD Histogram'
-            ),
-            row=2, col=1
-        )
+        ax3.set_title("MACD")
+        ax3.bar(df.index, df['macd_hist'], width=1,
+                label='MACD Histogram', alpha=0.3)
+        ax3.plot(df.index, df['macd'], linewidth=0.5, label='MACD')
+        ax3.plot(df.index, df['macd_signal'], linewidth=0.5, label='MACD Signal')
+        ax3.set_xlabel("Date")
+        ax3.set_ylabel("MACD")
+        ax3.legend()
 
-        # 3. RSI
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['rsi'],
-                name='RSI',
-                line=dict(color='purple', width=1)
-            ),
-            row=3, col=1
-        )
-        # Add RSI threshold lines
-        fig.add_hline(y=70, line_color="red", line_dash="dash", row=3, col=1)
-        fig.add_hline(y=30, line_color="green", line_dash="dash", row=3, col=1)
 
-        # 4. Bollinger Bands
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['close'],
-                name='Close',
-                line=dict(color='black', width=1)
-            ),
-            row=4, col=1
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['bb_upper'],
-                name='Upper BB',
-                line=dict(color='gray', dash='dash', width=1)
-            ),
-            row=4, col=1
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['bb_middle'],
-                name='Middle BB',
-                line=dict(color='blue', width=1)
-            ),
-            row=4, col=1
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['bb_lower'],
-                name='Lower BB',
-                line=dict(color='gray', dash='dash', width=1)
-            ),
-            row=4, col=1
-        )
+        # RSI
 
-        # 5. ADX and DMI
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['adx'],
-                name='ADX',
-                line=dict(color='black', width=1)
-            ),
-            row=5, col=1
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['plus_di'],
-                name='+DI',
-                line=dict(color='green', width=1)
-            ),
-            row=5, col=1
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['minus_di'],
-                name='-DI',
-                line=dict(color='red', width=1)
-            ),
-            row=5, col=1
-        )
+        ax4.set_title("RSI 14")
+        ax4.plot(df.index, df['rsi'], linewidth=0.5, label='RSI', color='blue')
+        ax4.axhline(y=70, color='red', linewidth=0.5, linestyle='--')
+        ax4.axhline(y=30, color='green', linewidth=0.5, linestyle='--')
 
-        # 6. Ichimoku Cloud
-        ichimoku_traces = [
-            ('tenkan_sen', 'Conversion Line', 'blue'),
-            ('kijun_sen', 'Base Line', 'red'),
-            ('senkou_span_a', 'Leading Span A', 'green'),
-            ('senkou_span_b', 'Leading Span B', 'red'),
+        # Fill area where RSI is above 70 (Overbought region)
+        ax4.fill_between(df.index, 70, df['rsi'], where=(
+            df['rsi'] >= 70), color='red', alpha=0.3)
 
-        ]
+        # Fill area where rsi is below 30 (Oversold region)
+        ax4.fill_between(df.index, df['rsi'], 30, where=(
+            df['rsi'] <= 30), color='green', alpha=0.3)
 
-        for col, name, color in ichimoku_traces:
-            fig.add_trace(
-                go.Scatter(
-                    x=df.index,
-                    y=df[col],
-                    name=name,
-                    line=dict(color=color, width=1)
-                ),
-                row=6, col=1
-            )
+        ax4.set_xlabel("Date")
+        ax4.set_ylim(0, 100)
+        ax4.set_ylabel("RSI")
+        ax4.legend()
 
-        # Add price to Ichimoku chart
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['close'],
-                name='Close Price',
-                line=dict(color='black', width=1)
-            ),
-            row=6, col=1
-        )
+        # Fifth subplot (Bollinger Bandwidth)
 
-        # 7. ATR
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df['atr'],
-                name='ATR',
-                line=dict(color='blue', width=1)
-            ),
-            row=7, col=1
-        )
+        ax5.set_title("Bollinger Bandwidth")
+        ax5.set_title("Bollinger Bands and Spot Price")
+        ax5.plot(df.index, df['bb_lower'], label='Lower Bollinger Band',
+                color='purple', linestyle='--', linewidth=0.5)
+        ax5.plot(df.index, df['bb_middle'], label='Middle Bollinger Band (SMA)',
+                color='blue', linestyle='--', linewidth=0.5)
+        ax5.plot(df.index, df['bb_upper'], label='Upper Bollinger Band',
+                color='purple', linestyle='--', linewidth=0.5)
 
-        # Update layout
-        fig.update_layout(
-            height=2000,  # Increased height for better visibility
-            title_text="Trading Analysis Dashboard",
-            showlegend=True,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            xaxis_rangeslider_visible=False
-        )
+        # Plot Spot Price
+        ax5.plot(df.index, df['close'], linewidth=1, label='Spot Price', color='black')
 
-        # Update y-axes labels
-        y_axis_labels = [
-            'Price', 'MACD', 'RSI', 'Price',
-            'ADX/DMI', 'Price', 'ATR'
-        ]
+        ax5.set_xlabel("Date")
+        ax5.set_ylabel("Price")
+        ax5.legend()
 
-        for i, label in enumerate(y_axis_labels, start=1):
-            fig.update_yaxes(title_text=label, row=i, col=1)
 
-        # Update x-axis to show date format
-        for i in range(1, 8):
-            fig.update_xaxes(
-                row=i,
-                col=1,
-                rangeslider_visible=False,
-                showgrid=True
-            )
+  
+
+        
+        # ATR
+
+        ax7.set_title("ATR")
+        ax7.plot(df.index, df['atr'], linewidth=0.5, label='ATR', color='black')
+        ax7.set_ylim(auto=True)
+        ax7.set_xlabel("Date")
+        ax7.set_ylabel("Range")
+        ax7.legend(loc='upper right')
+
+
+
+        # ADX / ADMI
+        ax8.set_title("ADX/DMI")
+        ax8.plot(df.index, df['adx'], linewidth=0.5, label='ADX', color='black')
+        ax8.plot(df.index, df['plus_di'], linewidth=0.5, label='plus_di', color='green')
+        ax8.plot(df.index, df['minus_di'], linewidth=0.5, label='-DI', color='red')
+
+        ax8.set_xlabel("Date")
+        ax8.set_ylim(auto=True)
+        ax8.set_ylabel("Percentage")
+        ax8.legend()
+        
+
+        # Plot Bollinger %B
+        ax9.set_title("Bollinger %B")
+        ax9.plot(df.index, df['bb_percent'], linewidth=0.5, label='Bollinger %B', color='blue')
+        ax9.axhline(y=0, color='green', linestyle='--', linewidth=0.5, label='Lower Band (0)')
+        ax9.axhline(y=50, color='orange', linestyle='--', linewidth=0.5, label='Middle Band (50)')
+        ax9.axhline(y=100, color='red', linestyle='--', linewidth=0.5, label='Upper Band (100)')
+        ax9.set_xlabel("Date")
+        ax9.set_ylabel("Percentage (%)")
+        ax9.legend(loc='upper right')
+
+
+        # Plot Bollinger Bandwidth
+        ax10.set_title("Bollinger Bandwidth")
+        ax10.plot(df.index, df['bb_bandwidth'], linewidth=0.5, label='Bandwidth (%)', color='purple')
+        ax10.set_xlabel("Date")
+        ax10.set_ylabel("Bandwidth (%)")
+        ax10.legend()
+
+
+        # Apply the formatter to each x-axis
+        date_formatter = mdates.DateFormatter('%Y-%m')
+        ax1.xaxis.set_major_formatter(date_formatter)
+        ax2.xaxis.set_major_formatter(date_formatter)
+        ax3.xaxis.set_major_formatter(date_formatter)
+        ax4.xaxis.set_major_formatter(date_formatter)
+        ax7.xaxis.set_major_formatter(date_formatter)
+        ax8.xaxis.set_major_formatter(date_formatter)
+        ax9.xaxis.set_major_formatter(date_formatter)
+        ax10.xaxis.set_major_formatter(date_formatter)
+
+        # Automatically adjust spacing to avoid overlap
+        plt.tight_layout()
 
         # Show the plot
-        fig.show()
-
-    def create_single_chart(
-        self,
-        df: pd.DataFrame,
-        chart_type: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        show_candlesticks: bool = False
-    ) -> None:
-        """
-        Create a single chart for a specific indicator or price.
-
-        Args:
-            df: DataFrame containing price data and indicators
-            chart_type: Type of chart to create ('price', 'macd', 'rsi', etc.)
-            start_time: Optional start time filter
-            end_time: Optional end time filter
-            show_candlesticks: Whether to show candlesticks (True) or line chart (False)
-        """
-        # Filter data if time range is specified
-        if start_time:
-            df = df[df.index >= pd.Timestamp(start_time)]
-        if end_time:
-            df = df[df.index <= pd.Timestamp(end_time)]
-
-        fig = go.Figure()
-
-        if chart_type == 'price':
-            if show_candlesticks:
-                fig.add_trace(
-                    go.Candlestick(
-                        x=df.index,
-                        open=df['open'],
-                        high=df['high'],
-                        low=df['low'],
-                        close=df['close'],
-                        name='Price'
-                    )
-                )
-            else:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df['close'],
-                        name='Close Price',
-                        line=dict(color='black')
-                    )
-                )
-
-            # Add SMAs
-            for period in [20, 50]:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df[f'sma_{period}'],
-                        name=f'SMA {period}'
-                    )
-                )
-
-        elif chart_type == 'macd':
-            fig.add_trace(
-                go.Scatter(
-                    x=df.index,
-                    y=df['macd'],
-                    name='MACD'
-                )
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=df.index,
-                    y=df['macd_signal'],
-                    name='Signal'
-                )
-            )
-            fig.add_trace(
-                go.Bar(
-                    x=df.index,
-                    y=df['macd_hist'],
-                    name='Histogram'
-                )
-            )
-
-        # Add more chart types as needed...
-
-        fig.update_layout(
-            title=f"{chart_type.upper()} Chart",
-            xaxis_title="Date",
-            yaxis_title=chart_type.upper(),
-            height=600,
-            showlegend=True
-        )
-
-        fig.show()
+        plt.show()

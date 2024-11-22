@@ -32,32 +32,55 @@ class Position:
     take_profit: Optional[float] = None
     stop_loss: Optional[float] = None
 
+@dataclass
+class RewardParams:
+    """Parameters controlling the reward function behavior."""
+    realized_pnl_weight: float = 0.1
+    unrealized_pnl_weight: float = 0.8
+    holding_time_threshold: int = 7*12  # hours ok
+    holding_penalty_factor: float = -0.00001
+    max_trades_per_day: int = 6 
+    overtrading_penalty_factor: float = -0.0001
+    win_rate_threshold: float = 0.4
+    win_rate_bonus_factor: float = 0.0005
+    drawdown_penalty_factor: float = -0.0001
 
 class ForexTradingEnv(gym.Env):
     def __init__(
         self,
         df: pd.DataFrame,
         pair: str,
-        initial_balance: float = 10000.0,
+        initial_balance: float = 1_000_000.0,
+        trade_size: float = 100_000.0,
         max_position_size: float = 1.0,
         transaction_cost: float = 0.0001,
         reward_scaling: float = 1e-4,
         sequence_length: int = 10,
         random_start: bool = True,
-        trading_history_size: int = 50  # Keep track of last 50 trades
+        margin_rate_pct:float = 0.01,
+        trading_history_size: int = 50,  # Keep track of last 50 trades
+        reward_params: Optional[RewardParams] = None,
+    
     ):
         super(ForexTradingEnv, self).__init__()
-
+        # We are now pre loading df into np array    
         self.df = df
+        self.trade_size = trade_size
         self.pair = pair
         self.base_currency = pair.split('_')[0]
         self.quote_currency = pair.split('_')[1]
         self.initial_balance = initial_balance
+        self.balance = self.initial_balance
         self.max_position_size = max_position_size
         self.transaction_cost = transaction_cost
         self.reward_scaling = reward_scaling
         self.sequence_length = sequence_length
         self.random_start = random_start
+        self.margin_rate_pct = margin_rate_pct
+        self._last_trade_info = None
+
+        # Initialize reward parameters
+        self.reward_params = reward_params or RewardParams()
 
         # Additional tracking for enhanced observations
         self.trading_history_size = trading_history_size
@@ -72,7 +95,7 @@ class ForexTradingEnv(gym.Env):
         # Enhanced observation space
         self.market_features = len(self.feature_columns)
         # Basic account features (balance, position type, size)
-        self.account_features = 3
+        self.account_features = 7
         # Time in pos, drawdown, dist to SL/TP, ATR ratio, unrealized PnL
         self.risk_features = 5
         # Hour sin/cos, day sin/cos, session one-hot (3)
@@ -119,6 +142,8 @@ class ForexTradingEnv(gym.Env):
         # Initialize state
         self.reset()
 
+
+
     def reset(self, seed: Optional[int] = None) -> Tuple[Dict[str, np.ndarray], Dict]:
         """Reset the environment to initial state."""
         super().reset(seed=seed)
@@ -126,6 +151,7 @@ class ForexTradingEnv(gym.Env):
         self.balance = self.initial_balance
         self.position: Optional[Position] = None
         self.current_step = self.sequence_length
+        self.trade_history = [] 
 
         if self.random_start and len(self.df) > self.sequence_length + 100:
             self.current_step = np.random.randint(
@@ -136,55 +162,135 @@ class ForexTradingEnv(gym.Env):
         self.total_pnl = 0.0
         self.total_trades = 0
         self.winning_trades = 0
+        self.trade_history = []
 
         return self._get_observation(), self._get_info()
+
+    def _print_after_episode(self):
+        """Print episode summary with corrected metrics."""
+        total_return = ((self.balance / self.initial_balance) - 1) * 100
+        win_rate = (self.winning_trades / max(1, self.total_trades)) * 100
+        
+        print("\nEpisode Summary:")
+        print(f"Final Return: {total_return:.2f}%")
+        print(f"Total PnL: {self.total_pnl:.2f}")
+        print(f"Total Trades: {self.total_trades}")
+        print(f"Winning Trades: {self.winning_trades}")
+        print(f"Win Rate: {win_rate:.2f}%")
+        print(f"Initial Balance: {self.initial_balance:.2f}")
+        print(f"Final Balance: {self.balance:.2f}")
+        print("-" * 50)
+        pass 
 
     def step(self, action: int) -> Tuple[Dict[str, np.ndarray], float, bool, bool, Dict]:
         """Execute one step in the environment."""
         action = Actions(action)
-        current_price = self.df.iloc[self.current_step]['close']
         reward = 0.0
+        # Move to next step / get next price
+        current_price = self.df.iloc[self.current_step]['close']
+        self.current_step += 1
+        prev_price = self.df.iloc[self.current_step-1]['close']
+        if self.balance == 0 or self.initial_balance == 0:
+            print(f"0 Value balance: {self.balance} self.initial_balance: {self.initial_balance} at step: {self.current_step}")
 
         # Handle position transitions
         if action == Actions.NO_POSITION and self.position is not None:
             # Close current position
-            reward = self._close_position(current_price)
+            reward = self._calculate_reward(self._close_position(current_price))
 
         elif action == Actions.LONG:
             if self.position is None:
                 # Open long position
                 self._open_position('long', current_price)
+                reward = self._calculate_reward()
+            
             elif self.position.type == 'short':
                 # Close short and open long
-                reward = self._close_position(current_price)
+                reward = self._calculate_reward(self._close_position(current_price))
                 self._open_position('long', current_price)
+
+            elif self.position.type == 'long':
+                # Maintain long position, calculate reward based on holding
+                reward = self._calculate_reward()
 
         elif action == Actions.SHORT:
             if self.position is None:
                 # Open short position
                 self._open_position('short', current_price)
+                reward = self._calculate_reward()
+            
             elif self.position.type == 'long':
                 # Close long and open short
-                reward = self._close_position(current_price)
+                reward = self._calculate_reward(self._close_position(current_price))
                 self._open_position('short', current_price)
+            
+            elif self.position.type == 'short':
+                # Maintain short position, calculate reward based on holding
+                reward = self._calculate_reward()
 
-        # Calculate unrealized PnL if position is open
+       
+
+
+        # Check if episode is done
+        terminated = self.current_step >= len(self.df) - 1 or self.balance <= 0
+        truncated = False
+        if terminated or truncated:
+            self._print_after_episode()
+
+        return self._get_observation(), reward, terminated, truncated, self._get_info()
+    
+    def _get_market_sequence(self) -> np.ndarray:
+        """Get the market data sequence with padding if needed."""
+        if self.current_step >= len(self.df):
+            raise IndexError("Current step exceeds dataset length")
+        start_idx = self.current_step - self.sequence_length
+        end_idx = self.current_step
+        
+        # Handle the case where we don't have enough history
+        if start_idx < 0:
+            # Create padding
+            pad_length = abs(start_idx)
+            market_data = self.df.iloc[0:end_idx][self.feature_columns].values
+            padding = np.zeros((pad_length, len(self.feature_columns)))
+            market_obs = np.vstack([padding, market_data])
+        else:
+            market_obs = self.df.iloc[start_idx:end_idx][self.feature_columns].values
+            
+        return market_obs
+
+    def _get_account_state(self) -> np.ndarray:
+        """Calculate the current account state features."""
+        # Initialize with zeros
+        position_type = 0.0  # No position
+        position_size = 0.0
+        unrealized_pnl = 0.0
+        
+        # Update if position exists
         if self.position is not None:
+            # Position type: 1 for long, -1 for short
+            position_type = 1.0 if self.position.type == 'long' else -1.0
+            
+            # Normalized position size
+            position_size = self.position.size / self.initial_balance
+            
+            # Calculate unrealized PnL
+            current_price = self.df.iloc[self.current_step]['close']
             unrealized_pnl = self._calculate_pnl(
                 self.position.type,
                 self.position.entry_price,
                 current_price,
                 self.position.size
-            )
-            reward = unrealized_pnl * self.reward_scaling
-
-        # Move to next step
-        self.current_step += 1
-
-        # Check if episode is done
-        done = self.current_step >= len(self.df) - 1 or self.balance <= 0
-
-        return self._get_observation(), reward, done, False, self._get_info()
+            ) / self.initial_balance  # Normalize by initial balance
+        
+        return np.array([
+            self.balance / self.initial_balance,  # Normalized balance
+            position_type,  # Position direction
+            position_size,  # Normalized position size
+            unrealized_pnl,  # Normalized unrealized PnL
+            self.total_pnl / self.initial_balance,  # Normalized total PnL
+            self.total_trades / 1000.0,  # Normalized trade count (assuming max 1000 trades)
+            self.winning_trades / max(1, self.total_trades)  # Win rate
+        ])
 
     def _get_observation(self) -> Dict[str, np.ndarray]:
         """Construct enhanced observation with additional features."""
@@ -235,7 +341,10 @@ class ForexTradingEnv(gym.Env):
 
         # ATR ratio to position size
         atr = self.df.iloc[self.current_step]['atr']
-        atr_ratio = atr * self.position.size / self.balance
+        if self.balance > 0:
+            atr_ratio = atr * self.position.size / self.balance
+        else:
+            atr_ratio = 0.0
 
         # Unrealized PnL (normalized by position size)
         unrealized_pnl = self._calculate_pnl(
@@ -283,27 +392,27 @@ class ForexTradingEnv(gym.Env):
 
         recent_trades = self.trade_history[-self.trading_history_size:]
 
-        # Overall win ratio
-        win_ratio = sum(1 for t in recent_trades if t > 0) / len(recent_trades)
+        # Overall win ratio - check PnL field in trade dictionaries
+        win_ratio = sum(1 for t in recent_trades if t['pnl'] > 0) / len(recent_trades)
 
         # Average PnL
-        avg_pnl = np.mean(recent_trades) / self.initial_balance
+        avg_pnl = np.mean([t['pnl'] for t in recent_trades]) / self.initial_balance
 
         # Maximum drawdown in current session
-        session_drawdown = (self.session_start_balance -
+        session_drawdown = (self.session_start_balance - 
                             self.balance) / self.session_start_balance
 
         # Number of trades in current session (normalized)
         current_session = self._get_market_session(
             self.df.index[self.current_step])
-        # Normalize by expected max
-        session_trade_count = len(self.session_trades[current_session]) / 20
+        # Normalize by expected max trades per session
+        session_trade_count = len(self.session_trades[current_session]) / 20.0
 
         # Success rate in current session type
         session_trades = self.session_trades[current_session]
         if session_trades:
-            session_success = sum(
-                1 for t in session_trades if t > 0) / len(session_trades)
+            session_success = sum(1 for t in session_trades 
+                                if t['pnl'] > 0) / len(session_trades)
         else:
             session_success = 0.0
 
@@ -313,7 +422,7 @@ class ForexTradingEnv(gym.Env):
             session_drawdown,
             session_trade_count,
             session_success
-        ])
+        ], dtype=np.float32)
 
     def _get_market_session(self, timestamp: pd.Timestamp) -> MarketSession:
         """Determine current market session."""
@@ -337,16 +446,35 @@ class ForexTradingEnv(gym.Env):
 
     def _on_trade_closed(self, pnl: float) -> None:
         """Update trade history when a position is closed."""
-        self.trade_history.append(pnl)
+        if self.position is None:
+            return
+            
+        current_time = self.df.index[self.current_step]
+        current_price = self.df.iloc[self.current_step]['close']
+        
+        trade_info = {
+            'pnl': pnl,
+            'type': self.position.type,
+            'entry_price': self.position.entry_price,
+            'exit_price': current_price,
+            'trade_closed': True,
+            'size': self.position.size,
+            'entry_time': self.position.entry_time,
+            'exit_time': current_time,
+            'duration': (current_time - self.position.entry_time).total_seconds() / 3600,
+            'session': self._get_market_session(current_time),
+  
+        }
+        
+        self.trade_history.append(trade_info)
         if len(self.trade_history) > self.trading_history_size:
             self.trade_history.pop(0)
 
-        current_session = self._get_market_session(
-            self.df.index[self.current_step])
-        self.session_trades[current_session].append(pnl)
+        current_session = self._get_market_session(current_time)
+        self.session_trades[current_session].append(trade_info)
 
         # Update peak balance
-        self.balance = max(self.balance, self.peak_balance)
+        self.peak_balance = max(self.peak_balance, self.balance)
 
     def _calculate_pnl(
         self,
@@ -392,13 +520,14 @@ class ForexTradingEnv(gym.Env):
         self.position = Position(
             type=position_type,
             entry_price=entry_price,
-            size=position_size,
+            size=self.trade_size,
             entry_time=self.df.index[self.current_step],
             base_currency=self.base_currency,
             quote_currency=self.quote_currency
         )
 
-        self.balance -= position_size
+        required_margin = self.trade_size * self.margin_rate_pct  # 1% margin requirement
+      
 
     def _close_position(self, current_price: float) -> float:
         """Close current position and return reward."""
@@ -419,14 +548,207 @@ class ForexTradingEnv(gym.Env):
             self.position.size
         )
 
+        self._last_trade_info = {
+            'trade_closed': True,  # Must be True to trigger trade recording
+            'trade_pnl': pnl,
+            'entry_time': self.position.entry_time,
+            'exit_time': self.df.index[self.current_step],
+            'entry_price': self.position.entry_price,
+            'exit_price': exit_price,
+            'position_type': self.position.type,
+            'position_size': self.position.size,
+            'market_state': {
+                'session': self._get_market_session(self.df.index[self.current_step]).name,
+                'balance': self.balance,
+                'total_trades': self.total_trades,
+                'win_rate': self.winning_trades / max(1, self.total_trades)
+            }
+        }
+
         # Update metrics
         self.total_pnl += pnl
-        self.balance += self.position.size + pnl
+        self.balance += pnl
         self.total_trades += 1
         if pnl > 0:
             self.winning_trades += 1
 
+        # Call _on_trade_closed before clearing position
+        self._on_trade_closed(pnl)  
         # Clear position
         self.position = None
 
-        return pnl * self.reward_scaling
+        return pnl
+    
+
+ 
+    def _calculate_reward(self, realized_pnl: float = 0.0) -> float:
+        """
+        Calculate reward based on multiple factors:
+        1. Realized PnL from closed trades
+        2. Unrealized PnL from open positions
+        3. Risk-adjusted returns (Sharpe-like ratio)
+        4. Position holding costs
+        5. Trade efficiency metrics
+        
+        Returns:
+            float: Calculated reward
+        """
+        reward = 0.0
+        current_price = self.df.iloc[self.current_step]['close']
+        
+        # 1. Realized PnL component
+        if realized_pnl != 0:
+            normalized_pnl = realized_pnl / self.trade_size
+            reward += normalized_pnl * (1 + (self.reward_params.realized_pnl_weight if realized_pnl > 0 else 0))
+            
+      
+            
+            # Calculate win rate bonus
+            # if self.total_trades > 0:
+            #     win_rate = self.winning_trades / self.total_trades
+            #     reward += win_rate * 0.1  # Small bonus for maintaining good win rate
+        
+        # 2. Unrealized PnL component for open positions
+        if self.position is not None:
+            unrealized_pnl = self._calculate_pnl(
+                self.position.type,
+                self.position.entry_price,
+                current_price,
+                self.position.size
+            )
+            
+            normalized_unrealized = unrealized_pnl / self.trade_size
+        
+            # Add scaled unrealized PnL (smaller weight than realized)
+            reward += normalized_unrealized * self.reward_params.unrealized_pnl_weight
+            
+            # Add holding cost penalty (larger for longer-held positions)
+            holding_hours = (self.df.index[self.current_step] - 
+                        self.position.entry_time).total_seconds() / 3600  # in hours
+            # Stronger penalty for very long holds
+   
+            if holding_hours > self.reward_params.holding_time_threshold:  # Penalize holds over x hours
+                holding_penalty = self.reward_params.holding_penalty_factor * (holding_hours - self.reward_params.holding_time_threshold)
+                reward += holding_penalty
+        
+            # 3. Anti-overtrading penalty
+            if self.total_trades > 0:
+                # Calculate trades per day
+                total_days = (self.df.index[self.current_step] - 
+                            self.df.index[0]).total_seconds() / (24 * 3600)
+                trades_per_day = self.total_trades / max(1, total_days)
+                
+                # Penalty for excessive trading (more than 6 trades per day)
+                if trades_per_day > self.reward_params.max_trades_per_day:
+                    overtrading_penalty = self.reward_params.overtrading_penalty_factor * (trades_per_day - self.reward_params.max_trades_per_day)
+                    reward += overtrading_penalty
+   
+            # 4. Win rate Linear increase in bonus above 40% win rate
+            min_trades_required = 10
+            if self.total_trades >= min_trades_required:
+                win_rate = self.winning_trades / self.total_trades
+                # Linear scaling between 40% and 60% win rate
+                win_rate_bonus = max(0, (win_rate - self.reward_params.win_rate_threshold) * self.reward_params.win_rate_bonus_factor)
+                reward += win_rate_bonus
+                
+            # 5. Risk management penalty (progressive with drawdown)
+            if self.balance < self.initial_balance:
+                drawdown_pct = (self.initial_balance - self.balance) / self.initial_balance
+                # Linear penalty that increases with drawdown
+                risk_penalty = self.reward_params.drawdown_penalty_factor * (drawdown_pct * 100) ** 2
+                reward += risk_penalty
+
+        return float(reward)
+    
+    def _get_info(self) -> Dict:
+        """Get current state information and performance metrics."""
+        current_price = self.df.iloc[self.current_step]['close']
+        
+        # Calculate unrealized PnL if position exists
+        unrealized_pnl = 0.0
+        position_duration = 0
+        position_type = 'none'
+        
+        if self.position is not None:
+            position_type = self.position.type
+            unrealized_pnl = self._calculate_pnl(
+                self.position.type,
+                self.position.entry_price,
+                current_price,
+                self.position.size
+            )
+            position_duration = (self.df.index[self.current_step] - 
+                            self.position.entry_time).total_seconds() / 3600  # Convert to hours
+        
+        # Calculate drawdown
+        peak_balance = max(self.peak_balance, self.balance + unrealized_pnl)
+        current_balance = self.balance + unrealized_pnl
+        drawdown = (peak_balance - current_balance) / peak_balance if peak_balance > 0 else 0.0
+        info= {
+            # Account metrics
+            'balance': self.balance,
+            'total_pnl': self.total_pnl,
+            'unrealized_pnl': unrealized_pnl,
+            'total_trades': self.total_trades,
+            'trade_count': self.total_trades,
+            'win_rate': self.winning_trades / max(1, self.total_trades),
+            'winning_trades': self.winning_trades,
+            'drawdown': drawdown,
+            
+            # Position info
+            'position_type': position_type,
+            'position_size': self.position.size if self.position else 0.0,
+            'position_duration': position_duration,
+            
+            # Trading costs and metrics
+            'trading_costs': self.transaction_cost * (self.position.size if self.position else 0.0),
+            'avg_trade_pnl': self.total_pnl / max(1, self.total_trades),
+            
+            # Episode progress
+            'current_step': self.current_step,
+            'total_steps': len(self.df),
+            'timestamp': self.df.index[self.current_step],
+            
+            # Market info
+            'current_price': current_price,
+            'spread': self.df.iloc[self.current_step].get('spread', self.transaction_cost)
+        }
+        if self._last_trade_info is not None:
+            info.update(self._last_trade_info)
+            self._last_trade_info = None
+        return info
+    
+    @property
+    def win_rate(self) -> float:
+        """Calculate win rate."""
+        return self.winning_trades / max(1, self.total_trades)
+
+    @property
+    def avg_trade_duration(self) -> float:
+        """Calculate average trade duration."""
+        if not self.trade_history:
+            return 0.0
+        return sum(t['duration'] for t in self.trade_history) / len(self.trade_history)
+
+    @property
+    def max_drawdown(self) -> float:
+        """Calculate maximum drawdown."""
+        if self.peak_balance <= 0:
+            return 0.0
+        return (self.peak_balance - self.balance) / self.peak_balance
+
+    @property
+    def position_ratios(self) -> Dict[str, float]:
+        """Calculate position type ratios."""
+        if not self.trade_history:
+            return {'long': 0.0, 'short': 0.0, 'none': 1.0}
+        
+        total = len(self.trade_history)
+        longs = sum(1 for t in self.trade_history if t.get('type') == 'long')
+        shorts = sum(1 for t in self.trade_history if t.get('type') == 'short')
+        
+        return {
+            'long': longs / total,
+            'short': shorts / total,
+            'none': (total - longs - shorts) / total
+        }
