@@ -69,7 +69,8 @@ class ForexTradingEnv(gym.Env):
     ):
         super(ForexTradingEnv, self).__init__()
 
-        self.excluded_features = excluded_features or ['timestamp', 'volume']
+        self.excluded_features = excluded_features or [
+            'timestamp', 'open', 'high', 'low']
         self.included_features = included_features
         self.df = df
         # Basic configuration
@@ -226,13 +227,20 @@ class ForexTradingEnv(gym.Env):
         truncated = False
         if terminated or truncated:
             self._print_after_episode()
+        observation = self._get_observation_hstack(),
+        if np.any(np.isnan(observation)) or np.any(np.isinf(observation)):
+            print(f"Invalid observation at step {self.current_step}")
+            print(f"Observation: {observation}")
+            raise ValueError("Observation contains NaN or Inf values")
 
-        return self._get_observation_hstack(), reward, terminated, truncated, self._get_info()
+        return observation, reward, terminated, truncated, self._get_info()
 
     def _preprocess_data(self, df: pd.DataFrame):
         """Convert DataFrame to structured arrays for faster access."""
         # Store timestamps as integers for faster indexing
         self.timestamps = np.array(df.index.astype(np.int64))
+        actual_excluded = [
+            col for col in self.excluded_features if col in df.columns]
 
         # Flexible feature selection
         if self.included_features is not None:
@@ -240,9 +248,9 @@ class ForexTradingEnv(gym.Env):
             self.feature_columns = [
                 col for col in self.included_features if col in df.columns]
         else:
-            # Use all features except excluded ones
+            # Use all features except excluded ones that exist in df
             self.feature_columns = [
-                col for col in df.columns if col not in self.excluded_features]
+                col for col in df.columns if col not in actual_excluded]
 
         # Log selected features
         print(
@@ -254,10 +262,10 @@ class ForexTradingEnv(gym.Env):
         # Convert market data to numpy arrays
         self.market_data = {
             'close': df['close'].values,
-            'open': df['open'].values,
-            'high': df['high'].values,
-            'low': df['low'].values,
-            'atr': df['atr'].values if 'atr' in df else np.zeros(len(df))
+            # 'open': df['open'].values,
+            # 'high': df['high'].values,
+            # 'low': df['low'].values,
+            # 'atr': df['atr'].values if 'atr' in df else np.zeros(len(df))
         }
 
         self.feature_data = df[self.feature_columns].values
@@ -270,6 +278,20 @@ class ForexTradingEnv(gym.Env):
         # 4 for time encoding + 3 for session
         self.context_obs = np.zeros(7, dtype=np.float32)
         self.history_obs = np.zeros(5)
+
+        if np.any(np.isnan(self.feature_data)) or np.any(np.isinf(self.feature_data)):
+            # Identify columns with NaN or Inf values
+            nan_columns = df[self.feature_columns].columns[df[self.feature_columns].isnull(
+            ).any()].tolist()
+            inf_columns = df[self.feature_columns].columns[np.isinf(
+                df[self.feature_columns]).any()].tolist()
+
+            print(f"Feature data contains NaN or Inf values.")
+            if nan_columns:
+                print(f"Columns with NaN values: {nan_columns}")
+            if inf_columns:
+                print(f"Columns with infinite values: {inf_columns}")
+            raise ValueError("Feature data contains NaN or Inf values")
 
     def _precompute_time_features(self):
         """Pre-compute time-based features for all timestamps."""
@@ -557,6 +579,16 @@ class ForexTradingEnv(gym.Env):
                 market_features,
                 position_info,
             ]).astype(np.float32)
+
+            if np.any(np.isnan(market_features)) or np.any(np.isinf(market_features)):
+                print(f"Invalid market_features at step {self.current_step}")
+                print(f"market_features: {market_features}")
+                raise ValueError("market_features contain NaN or Inf values")
+
+            if np.any(np.isnan(position_info)) or np.any(np.isinf(position_info)):
+                print(f"Invalid position_info at step {self.current_step}")
+                print(f"position_info: {position_info}")
+                raise ValueError("position_info contains NaN or Inf values")
 
             return observation
 
