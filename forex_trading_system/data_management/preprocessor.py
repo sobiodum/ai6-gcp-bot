@@ -41,6 +41,13 @@ class DataPreprocessor:
                 continue
 
             try:
+                if method == 'flo':
+                    pct_cols = ['RSI', 'bb_percent']
+                    if feature in pct_cols:
+                        pass
+                    else:
+                        pass
+                    pass
                 for start_idx in range(0, len(df), batch_size):
                     end_idx = min(start_idx + batch_size, len(df))
                     batch = df.iloc[start_idx:end_idx]
@@ -144,3 +151,56 @@ class DataPreprocessor:
             ]
 
         return df_cleaned
+
+    def normalize_simple(
+        self,
+        df: pd.DataFrame,
+        features: List[str] = None
+    ) -> pd.DataFrame:
+        """
+        Normalize features using simple price-relative or percentage-based approach.
+        """
+        df_normalized = df.copy()
+
+        # Add normalized close price
+        start_price = df['close'].iloc[0]
+        df_normalized['price_norm'] = df['close'] / start_price
+
+        # Define indicator groups
+        price_relative_indicators = [
+            'sma_20', 'sma_50',
+            'bb_upper', 'bb_middle', 'bb_lower',
+            'senkou_span_a', 'senkou_span_b',
+            'tenkan_sen', 'kijun_sen',
+            'macd', 'macd_signal', 'macd_hist',
+            'atr',
+            'bb_bandwidth'  # Moved from percentage to price-relative
+        ]
+
+        percentage_indicators = [
+            'rsi', 'bb_percent',  # bb_bandwidth removed from here
+            'plus_di', 'minus_di', 'adx'
+        ]
+
+        # Normalize price-relative indicators
+        if features is None:
+            features = [col for col in df.columns
+                        if col not in ['open', 'high', 'low', 'close', 'volume']]
+        for feature in features:
+            if feature in price_relative_indicators:
+                df_normalized[feature] = df[feature] / df['close']
+                print(f"Normalized {feature} by price")
+
+            elif feature in percentage_indicators:
+                df_normalized[feature] = df[feature] / 100.0
+                print(f"Normalized {feature} by percentage")
+
+            # Skip volume and other unspecified features
+            elif feature not in ['open', 'high', 'low', 'close', 'volume']:
+                print(f"Warning: No normalization rule for {feature}")
+
+        # Drop OHLC columns
+        # columns_to_drop = ['open', 'high', 'low', 'volume']
+        # df_normalized.drop(columns=columns_to_drop, inplace=True)
+
+        return df_normalized
