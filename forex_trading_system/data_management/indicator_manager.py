@@ -52,7 +52,7 @@ class IndicatorManager:
             selected_indicators: List of indicators to calculate (defaults to all)
             indicator_timeframe: Timeframe to calculate indicators on (e.g., 'D', 'H', '5T'). If None, use original timeframe.
         """
-
+        #! leave volume for now
         if 'volume' in df.columns:
             df = df.drop('volume', axis=1)
 

@@ -1,0 +1,44 @@
+# Logging configuration
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  standard:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: standard
+    stream: ext://sys.stdout
+
+  file:
+    class: logging.FileHandler
+    level: INFO
+    formatter: standard
+    filename: logs/trading_system.log
+    mode: a
+    encoding: utf8
+
+root:
+  level: INFO
+  handlers: [console, file]
+  propagate: true
+
+loggers:
+  trading:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+
+  data_management:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+
+  optuna_trials:
+    level: INFO
+    handlers: [console, file]
+    propagate: false

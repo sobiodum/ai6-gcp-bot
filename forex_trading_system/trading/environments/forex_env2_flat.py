@@ -1,3 +1,4 @@
+from utils.logging_utils import setup_logging, get_logger
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 import gymnasium as gym
@@ -6,6 +7,15 @@ import pandas as pd
 from dataclasses import dataclass
 from enum import Enum
 from numba import jit  # Add numba for performance-critical calculations
+# Add the project root to the Python path
+import os
+import sys
+project_root = os.path.abspath(os.path.join(os.getcwd(), '..'))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+setup_logging()
+logger = get_logger('ForexEnv2_flat')
 
 
 class Actions(Enum):
@@ -151,15 +161,15 @@ class ForexTradingEnv(gym.Env):
         total_return = ((self.balance / self.initial_balance) - 1) * 100
         win_rate = (self.winning_trades / max(1, self.total_trades)) * 100
 
-        print("\nEpisode Summary:")
-        print(f"Final Return: {total_return:.2f}%")
-        print(f"Total PnL: {self.total_pnl:.2f}")
-        print(f"Total Trades: {self.total_trades}")
-        print(f"Winning Trades: {self.winning_trades}")
-        print(f"Win Rate: {win_rate:.2f}%")
-        print(f"Initial Balance: {self.initial_balance:.2f}")
-        print(f"Final Balance: {self.balance:.2f}")
-        print("-" * 50)
+        logger.info("\nEpisode Summary:")
+        logger.info(f"Final Return: {total_return:.2f}%")
+        logger.info(f"Total PnL: {self.total_pnl:.2f}")
+        logger.info(f"Total Trades: {self.total_trades}")
+        logger.info(f"Winning Trades: {self.winning_trades}")
+        logger.info(f"Win Rate: {win_rate:.2f}%")
+        logger.info(f"Initial Balance: {self.initial_balance:.2f}")
+        logger.info(f"Final Balance: {self.balance:.2f}")
+        logger.info("-" * 50)
         pass
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
@@ -175,7 +185,7 @@ class ForexTradingEnv(gym.Env):
         post_step_price = self.current_price
 
         if self.balance == 0 or self.initial_balance == 0:
-            print(
+            logger.info(
                 f"0 Value balance: {self.balance} self.initial_balance: {self.initial_balance} at step: {self.current_step}")
 
         # Handle position transitions
@@ -227,13 +237,8 @@ class ForexTradingEnv(gym.Env):
         truncated = False
         if terminated or truncated:
             self._print_after_episode()
-        observation = self._get_observation_hstack(),
-        if np.any(np.isnan(observation)) or np.any(np.isinf(observation)):
-            print(f"Invalid observation at step {self.current_step}")
-            print(f"Observation: {observation}")
-            raise ValueError("Observation contains NaN or Inf values")
 
-        return observation, reward, terminated, truncated, self._get_info()
+        return self._get_observation_hstack(), reward, terminated, truncated, self._get_info()
 
     def _preprocess_data(self, df: pd.DataFrame):
         """Convert DataFrame to structured arrays for faster access."""
@@ -253,7 +258,7 @@ class ForexTradingEnv(gym.Env):
                 col for col in df.columns if col not in actual_excluded]
 
         # Log selected features
-        print(
+        logger.info(
             f"Selected features for observation space: {self.feature_columns}")
 
         # Set market_features before using it in setup_spaces
@@ -286,11 +291,11 @@ class ForexTradingEnv(gym.Env):
             inf_columns = df[self.feature_columns].columns[np.isinf(
                 df[self.feature_columns]).any()].tolist()
 
-            print(f"Feature data contains NaN or Inf values.")
+            logger.info(f"Feature data contains NaN or Inf values.")
             if nan_columns:
-                print(f"Columns with NaN values: {nan_columns}")
+                logger.info(f"Columns with NaN values: {nan_columns}")
             if inf_columns:
-                print(f"Columns with infinite values: {inf_columns}")
+                logger.info(f"Columns with infinite values: {inf_columns}")
             raise ValueError("Feature data contains NaN or Inf values")
 
     def _precompute_time_features(self):
@@ -545,7 +550,7 @@ class ForexTradingEnv(gym.Env):
 
             # Handle any NaN or infinite values
             if np.any(np.isnan(observation)) or np.any(np.isinf(observation)):
-                print(
+                logger.info(
                     f"Warning: Invalid values in observation at step {self.current_step}")
                 observation = np.nan_to_num(
                     observation, nan=0.0, posinf=1e6, neginf=-1e6)
@@ -553,7 +558,7 @@ class ForexTradingEnv(gym.Env):
             return observation
 
         except Exception as e:
-            print(f"Error constructing observation: {e}")
+            logger.info(f"Error constructing observation: {e}")
             raise
 
     def _get_observation_hstack(self) -> np.ndarray:
@@ -581,23 +586,25 @@ class ForexTradingEnv(gym.Env):
             ]).astype(np.float32)
 
             if np.any(np.isnan(market_features)) or np.any(np.isinf(market_features)):
-                print(f"Invalid market_features at step {self.current_step}")
-                print(f"market_features: {market_features}")
+                logger.info(
+                    f"Invalid market_features at step {self.current_step}")
+                logger.info(f"market_features: {market_features}")
                 raise ValueError("market_features contain NaN or Inf values")
 
             if np.any(np.isnan(position_info)) or np.any(np.isinf(position_info)):
-                print(f"Invalid position_info at step {self.current_step}")
-                print(f"position_info: {position_info}")
+                logger.info(
+                    f"Invalid position_info at step {self.current_step}")
+                logger.info(f"position_info: {position_info}")
                 raise ValueError("position_info contains NaN or Inf values")
 
             return observation
 
         except Exception as e:
-            print(f"Error constructing observation: {e}")
+            logger.info(f"Error constructing observation: {e}")
             raise
 
         except Exception as e:
-            print(f"Error constructing observation: {e}")
+            logger.info(f"Error constructing observation: {e}")
             raise
 
     def _get_market_session(self, timestamp: pd.Timestamp) -> MarketSession:

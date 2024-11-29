@@ -164,7 +164,8 @@ class DataPreprocessor:
 
         # Add normalized close price
         start_price = df['close'].iloc[0]
-        df_normalized['price_norm'] = df['close'] / start_price
+        #! Out to test
+        # df_normalized['price_norm'] = df['close'] / start_price
 
         # Define indicator groups
         price_relative_indicators = [
