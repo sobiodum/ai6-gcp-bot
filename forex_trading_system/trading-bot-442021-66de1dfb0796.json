@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "trading-bot-442021",
+  "private_key_id": "66de1dfb0796485dec8c8719a2600270ae5dc920",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDcmNuDWy9rpwuo\nDzRMCWWdEYPC+TvR0I/XnXX4BOIIXQFDaamoDTJ0iJMag3+gfApwit3e+r1KTnRd\npjZn76G4ktqbvYXdDK+tjZBluxq6FXkzb2plDFcQEVH9uSvev4/LCTUBPR1968mq\nSnuDSETMup43qRk+lSw+PBJkBMkXRDnHnFuAS99qLOiVcPC92/tglyVLHDna5K4u\nkg6xycX03RX5TKOQWlffy5ZaomIcIaSDfGUruEBpNdX2feVMGyFvZ7KV2Bw4fTqc\nZyKZLrYNtXBkx8d+Ii1+w84dOn3aZvDyhNTuCW57PwfNWOGeu+DF/Y57ntY2zrFL\nEmpmnodlAgMBAAECggEAAfs+E6/E39CGCjGwT2TRTLGrjSpLE3VaJWeeo3/7KBxc\nJg8tZEfclFtwi53SPhP0LNn7Jm1SMNruAO61dq4o8F2Bi6DbKye42D069wDJt+XF\nTtaJJ9sHAWWgfLT2p8U6JKU2RMFZ6x7qWF+Zsda5ZWtsYijrRclKMwtrfLJxZIZ2\nSWGf31Poyiqjf7g/gWj3qP//YOnUAaL7zbijgdRdLmcxAwF26a32+J7gXVAfCD2/\nMHrhGeEWY1CyRM4VWDc1XasJEfq6CzdbkXgBLYe4ZKh5LbmvCNuqYTQc+T9CUIkT\nleKuAeS2Zq5eaTm7fMRxUf5Dst2Bagvooqjo4HVULQKBgQDvNt6QhpLjRfDQijDA\n6rSEq0eafe/ZI4vJ2WPvRUizvTexczNT6nEFg129eLrYQnck8plWPqmYKo2JdtzR\noLCioWdr/Kbc4zrsQXJHGqdS69DADoz2VfQQAIE1y8xUgRE9Ou7QiQ7LlV3fxXSp\nSoUMLgJoYow2yJmZFkj8KOQeGwKBgQDsE46dfphXklxlcoD5Y4rl94AcIU16Asxn\n0ni/57h1csPz4GkeEgDYgwOXhGQdQaNj3t0T1vHwEx6YaSj7jv6mroO8+x45+kee\nU3BCJM/vX+RQAOPYKlLNp6u5PN1SulTEaJT7lYjz5tlv+emmiTOZWKfSUcFmmvKI\nkfOK/rRIfwKBgB6jfnowYlvtt1xedsQey6Q6c99bxf6fyOW/jEc3Loqm750wziAv\nZO551uXPss7EJJJ86Brdx8cPnDVBHiNTW4xY8/Am2hBsoj1kXIiy5z99qK0QsAlV\nFP9/sQz831zrcxPOmovnIhf9N5rTpY+RVd0rf29zP9Y8dz/eVNbHPgCFAoGAYuBa\nFjrkoaEKk+7eeBWqImGERcPpCFZNuJpdurrZ9k8oJWfzfwW5VvWgtoBb0ikgvv6k\nB+A6GvxXDyzUXnBo1fU39hoTceMSxgxac0mp0a+PF7cXtv0bC0nT0dTdOf4S7OSE\nqc7aupUQsyawJvFGLE8Gkz9syoXRWUQQBkJhzg8CgYEA3AfK0SwvOQIQ5HbqJUDv\njPLxJh/kefCcU3ErQXNMaT3l4nCPTLGpA+88H/x99iRNDc9BfDU4GlDgVdd6a9Y5\nnAS02LowFs4CEsGx3AYy8YB8RALla5DbE7PSfiDWEHEPj05RzF2HFj5KC8l8td5o\nfoy19NzaeqwCSaV6E7ip4Tk=\n-----END PRIVATE KEY-----\n",
+  "client_email": "florian@trading-bot-442021.iam.gserviceaccount.com",
+  "client_id": "111711523712907063784",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/florian%40trading-bot-442021.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

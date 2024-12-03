@@ -19,6 +19,194 @@ class IndicatorConfig:
     enabled: bool
     params: Dict
     visualize: bool
+    timeframe: str  # Added to specify calculation timeframe for each indicator
+
+
+class IndicatorManagerPandas:
+    """Manages calculation and caching of technical indicators."""
+
+    def __init__(self):
+        """
+        Initialize indicator manager with enhanced configuration.
+        """
+        self.indicator_params = {
+            'sma': {
+                'periods': [20, 50, 200],
+                # Specify timeframe for each period
+                'timeframes': ['native', 'native', 'D']
+            },
+            'rsi': {'period': 14},
+            'macd': {'fastperiod': 12, 'slowperiod': 26, 'signalperiod': 9},
+            'bollinger': {
+                'timeperiod': 20,
+                'nbdevup': 2,
+                'nbdevdn': 2,
+                'bandwidth_lookback': 52  # For bandwidth z-score calculation
+            },
+            'atr': {'period': 14},
+            'adx': {'period': 14},
+            'dmi': {'period': 14},
+            'ichimoku': {
+                'tenkan': 9,
+                'kijun': 26,
+                'senkou_b': 52
+            },
+
+        }
+
+    def _calculate_moving_averages(self, df: pd.DataFrame, timeframe: str = None) -> pd.DataFrame:
+        """
+        Calculate moving averages with support for different timeframes.
+
+        Args:
+            df: DataFrame with price data
+            timeframe: Target timeframe for calculation
+        """
+        result_df = df.copy()
+
+        for period, tf in zip(self.indicator_params['sma']['periods'],
+                              self.indicator_params['sma']['timeframes']):
+
+            if tf == 'D' and timeframe != 'D':
+                # Calculate periods needed for daily SMA based on intraday frequency
+                candles_per_day = int(pd.Timedelta('1D') / df.index.freq)
+                adjusted_period = period * candles_per_day
+
+                # Resample to daily first
+                daily_close = df['close'].resample('D').last()
+                daily_sma = daily_close.rolling(window=period).mean()
+
+                # Forward fill back to original frequency
+                result_df[f'sma_{period}_{tf}'] = daily_sma.reindex(
+                    df.index, method='ffill'
+                )
+            else:
+                # Calculate on native timeframe
+                result_df[f'sma_{period}'] = df['close'].rolling(
+                    window=period
+                ).mean()
+
+        return result_df
+
+    def _calculate_bollinger_bands(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Enhanced Bollinger Bands calculation with bandwidth z-score.
+        """
+        result_df = df.copy()
+
+        # Calculate standard Bollinger Bands
+        period = self.indicator_params['bollinger']['timeperiod']
+        std_dev = self.indicator_params['bollinger']['nbdevup']
+
+        middle = df['close'].rolling(window=period).mean()
+        std = df['close'].rolling(window=period).std()
+
+        result_df['bb_upper'] = middle + (std * std_dev)
+        result_df['bb_lower'] = middle - (std * std_dev)
+        result_df['bb_middle'] = middle
+
+        # Calculate Bandwidth
+        bandwidth = (result_df['bb_upper'] -
+                     result_df['bb_lower']) / result_df['bb_middle']
+        result_df['bb_bandwidth'] = bandwidth * 100
+
+        # Calculate Bandwidth Z-score
+        lookback = self.indicator_params['bollinger']['bandwidth_lookback']
+        result_df['bb_bandwidth_zscore'] = (
+            (bandwidth - bandwidth.rolling(lookback).mean()) /
+            bandwidth.rolling(lookback).std()
+        )
+
+        return result_df
+
+    def _calculate_dmi_adx_enhanced(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Enhanced DMI/ADX calculation with additional signals.
+        """
+        result_df = df.copy()
+        period = self.indicator_params['dmi']['period']
+
+        # Calculate True Range
+        high_low = df['high'] - df['low']
+        high_close = abs(df['high'] - df['close'].shift())
+        low_close = abs(df['low'] - df['close'].shift())
+
+        tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+        atr = tr.rolling(period).mean()
+
+        # Calculate DM
+        up_move = df['high'] - df['high'].shift()
+        down_move = df['low'].shift() - df['low']
+
+        pdm = up_move.where(
+            (up_move > down_move) & (up_move > 0),
+            0
+        )
+        ndm = down_move.where(
+            (down_move > up_move) & (down_move > 0),
+            0
+        )
+
+        # Smooth DM
+        smoothed_pdm = pdm.rolling(period).mean()
+        smoothed_ndm = ndm.rolling(period).mean()
+
+        # Calculate DI
+        pdi = 100 * (smoothed_pdm / atr)
+        ndi = 100 * (smoothed_ndm / atr)
+
+        result_df['plus_di'] = pdi
+        result_df['minus_di'] = ndi
+
+        # Calculate ADX
+        dx = 100 * abs(pdi - ndi) / (pdi + ndi)
+        result_df['adx'] = dx.rolling(period).mean()
+
+        # Add ADX threshold signals
+        result_df['adx_below_15'] = result_df['adx'] < 15
+        result_df['dmi_cross'] = (
+            (result_df['plus_di'] > result_df['minus_di']) &
+            (result_df['plus_di'].shift(1) <= result_df['minus_di'].shift(1))
+        )
+
+        return result_df
+
+    def _calculate_golden_cross_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculate golden/death cross signals with trend filters.
+        """
+        result_df = df.copy()
+        fast_period = self.indicator_params['golden_cross']['fast_period']
+        slow_period = self.indicator_params['golden_cross']['slow_period']
+
+        # Calculate moving averages if not already present
+        if f'sma_{fast_period}' not in result_df.columns:
+            result_df[f'sma_{fast_period}'] = df['close'].rolling(
+                fast_period).mean()
+        if f'sma_{slow_period}' not in result_df.columns:
+            result_df[f'sma_{slow_period}'] = df['close'].rolling(
+                slow_period).mean()
+
+        # Calculate cross signals
+        result_df['golden_cross'] = (
+            (result_df[f'sma_{fast_period}'] > result_df[f'sma_{slow_period}']) &
+            (result_df[f'sma_{fast_period}'].shift(1) <=
+             result_df[f'sma_{slow_period}'].shift(1))
+        )
+        result_df['death_cross'] = (
+            (result_df[f'sma_{fast_period}'] < result_df[f'sma_{slow_period}']) &
+            (result_df[f'sma_{fast_period}'].shift(1) >=
+             result_df[f'sma_{slow_period}'].shift(1))
+        )
+
+        # Add trend filters
+        result_df['price_above_200sma'] = df['close'] > result_df[f'sma_{slow_period}']
+        result_df['sma200_rising'] = (
+            result_df[f'sma_{slow_period}'] > result_df[f'sma_{slow_period}'].shift(
+                1)
+        )
+
+        return result_df
 
 
 class IndicatorManager:
@@ -52,7 +240,7 @@ class IndicatorManager:
             selected_indicators: List of indicators to calculate (defaults to all)
             indicator_timeframe: Timeframe to calculate indicators on (e.g., 'D', 'H', '5T'). If None, use original timeframe.
         """
-        #! leave volume for now
+
         if 'volume' in df.columns:
             df = df.drop('volume', axis=1)
 
@@ -183,7 +371,7 @@ class IndicatorManager:
                     # Indicators calculated on original timeframe, just assign
                     result_df[col] = indicator_df[col]
 
-            print(f"Added indicators: {indicator_columns}")
+            # print(f"Added indicators: {indicator_columns}")
             print(
                 f"Original shape: {original_df.shape}, Final shape: {result_df.shape}")
             result_df.dropna(inplace=True)
@@ -217,236 +405,76 @@ class IndicatorManager:
         }, inplace=True)
 
 
-# class IndicatorManager:
-#     """Manages calculation and caching of technical indicators."""
+class DualTimeframeIndicators:
+    def __init__(self, higher_timeframe='1D'):
+        self.higher_timeframe = higher_timeframe
 
-#     def __init__(self):
-#         """
-#         Initialize indicator manager with configuration.
+        self.indicator_params = {
+            'sma': [20, 50, 200],
+            'rsi': {'period': 14},
+            'macd': {'fastperiod': 12, 'slowperiod': 26, 'signalperiod': 9},
+            'bollinger': {'timeperiod': 20, 'nbdevup': 2, 'nbdevdn': 2},
+            'adx': {'period': 14},
+        }
 
-#         Args:
-#             config_path: Path to indicator configuration file
-#             cache_dir: Directory for caching calculated indicators
-#         """
-#         self.indicator_params = {
-#             'sma': {'periods': [20, 50]},
-#             'rsi': {'period': 14},
-#             'macd': {'fastperiod': 12, 'slowperiod': 26, 'signalperiod': 9},
-#             'bollinger': {'timeperiod': 20, 'nbdevup': 2, 'nbdevdn': 2},
-#             'atr': {'period': 14},
-#             'adx': {'period': 14},
-#             'dmi': {'period': 14},
-#         }
+    def calculate_indicators(self, df: pd.DataFrame, suffix: str) -> pd.DataFrame:
+        """Calculate indicators with specified suffix."""
+        df = df.copy()
 
+        # SMAs
+        for period in self.indicator_params['sma']:
+            df[f'sma_{period}_{suffix}'] = talib.SMA(
+                df['close'], timeperiod=period)
 
-#     def load_config(self):
-#         """Load indicator configuration from YAML file."""
-#         try:
-#             with open(self.config_path, 'r') as f:
-#                 config = yaml.safe_load(f)
-#                 self.indicators = {
-#                     name: IndicatorConfig(**params)
-#                     for name, params in config['indicators'].items()
-#                 }
-#         except FileNotFoundError:
-#             raise FileNotFoundError(
-#                 f"Could not find indicators.yaml in {self.config_path}. Current working directory: {os.getcwd()}")
+        # RSI
+        df[f'rsi_{suffix}'] = talib.RSI(df['close'],
+                                        timeperiod=self.indicator_params['rsi']['period'])
 
-#     def calculate_indicators(
-#         self,
-#         df: pd.DataFrame,
-#         selected_indicators: list = None
-#     ) -> pd.DataFrame:
-#         """
-#         Calculate technical indicators on daily timeframe and resample back.
+        # MACD
+        macd, signal, hist = talib.MACD(
+            df['close'], **self.indicator_params['macd'])
+        df[f'macd_{suffix}'] = macd
+        df[f'macd_signal_{suffix}'] = signal
+        df[f'macd_hist_{suffix}'] = hist
 
-#         Args:
-#             df: DataFrame with OHLCV data at original timeframe
-#             selected_indicators: List of indicators to calculate (defaults to all)
-#         """
-#         if selected_indicators is None:
-#             selected_indicators = ['sma', 'rsi', 'macd', 'bollinger', 'atr', 'adx', 'dmi', 'ichimoku']
+        # Bollinger Bands
+        upper, middle, lower = talib.BBANDS(
+            df['close'], **self.indicator_params['bollinger'])
+        df[f'bb_upper_{suffix}'] = upper
+        df[f'bb_middle_{suffix}'] = middle
+        df[f'bb_lower_{suffix}'] = lower
 
-#         try:
-#             # Store original DataFrame
-#             original_df = df.copy()
+        # ADX
+        df[f'adx_{suffix}'] = talib.ADX(df['high'], df['low'], df['close'],
+                                        timeperiod=self.indicator_params['adx']['period'])
 
-#             # Resample to daily timeframe
-#             daily_df = df.resample('D').agg({
-#                 'open': 'first',
-#                 'high': 'max',
-#                 'low': 'min',
-#                 'close': 'last',
-#                 'volume': 'sum'
-#             }).dropna()
+        return df
 
-#             # Calculate indicators on daily data
-#             daily_indicators = daily_df.copy()
+    def add_dual_timeframe_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate indicators on both original and higher timeframes."""
+        # Calculate indicators on original timeframe
+        df = self.calculate_indicators(df, suffix='orig')
 
-#             # SMA calculations
-#             if 'sma' in selected_indicators:
-#                 for period in self.indicator_params['sma']['periods']:
-#                     daily_indicators[f'sma_{period}'] = talib.SMA(
-#                         daily_indicators['close'],
-#                         timeperiod=period
-#                     )
+        # Resample to higher timeframe and calculate indicators
+        resampled = df.resample(self.higher_timeframe).agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last'
+        }).dropna()
 
-#             # RSI
-#             if 'rsi' in selected_indicators:
-#                 daily_indicators['rsi'] = talib.RSI(
-#                     daily_indicators['close'],
-#                     timeperiod=self.indicator_params['rsi']['period']
-#                 )
+        higher_df = self.calculate_indicators(
+            resampled, suffix=self.higher_timeframe.lower())
 
-#             # MACD
-#             if 'macd' in selected_indicators:
-#                 macd, signal, hist = talib.MACD(
-#                     daily_indicators['close'],
-#                     **self.indicator_params['macd']
-#                 )
-#                 daily_indicators['macd'] = macd
-#                 daily_indicators['macd_signal'] = signal
-#                 daily_indicators['macd_hist'] = hist
+        # Select only the indicator columns from higher timeframe
+        indicator_cols = [col for col in higher_df.columns if col not in [
+            'open', 'high', 'low', 'close']]
+        higher_indicators = higher_df[indicator_cols]
 
-#             # Bollinger Bands
-#             if 'bollinger' in selected_indicators:
-#                 upper, middle, lower = talib.BBANDS(
-#                     daily_indicators['close'],
-#                     **self.indicator_params['bollinger']
-#                 )
-#                 daily_indicators['bb_upper'] = upper
-#                 daily_indicators['bb_middle'] = middle
-#                 daily_indicators['bb_lower'] = lower
-#                 # Calculate Bollinger Bandwidth
-#                 daily_indicators['bb_bandwidth'] = ((upper - lower) / middle) * 100
+        # Forward fill higher timeframe indicators to original timeframe
+        aligned_indicators = higher_indicators.reindex(
+            df.index, method='ffill')
 
-#                 # Calculate Bollinger %B
-#                 daily_indicators['bb_percent'] = ((daily_indicators['close'] - lower) / (upper - lower)) * 100
-
-#             # ATR
-#             if 'atr' in selected_indicators:
-#                 daily_indicators['atr'] = talib.ATR(
-#                     daily_indicators['high'],
-#                     daily_indicators['low'],
-#                     daily_indicators['close'],
-#                     timeperiod=self.indicator_params['atr']['period']
-#                 )
-
-#             # DMI
-#             if 'dmi' in selected_indicators:
-#                 daily_indicators['plus_di'] = talib.PLUS_DI(
-#                     daily_indicators['high'],
-#                     daily_indicators['low'],
-#                     daily_indicators['close'],
-#                     timeperiod=self.indicator_params['dmi']['period']
-#                 )
-#                 daily_indicators['minus_di'] = talib.MINUS_DI(
-#                     daily_indicators['high'],
-#                     daily_indicators['low'],
-#                     daily_indicators['close'],
-#                     timeperiod=self.indicator_params['dmi']['period']
-#                 )
-
-#             # ADX
-#             if 'adx' in selected_indicators:
-#                 daily_indicators['adx'] = talib.ADX(
-#                     daily_indicators['high'],
-#                     daily_indicators['low'],
-#                     daily_indicators['close'],
-#                     timeperiod=self.indicator_params['adx']['period']
-#                 )
-#             if 'ichimoku' in selected_indicators:
-#                 self._add_ichimoku(daily_indicators)
-
-#             # Get indicator columns (exclude OHLCV)
-#             indicator_columns = [col for col in daily_indicators.columns
-#                                if col not in ['open', 'high', 'low', 'close', 'volume']]
-
-#             # Drop any rows with NaN values in indicators
-#             daily_indicators = daily_indicators.dropna()
-
-#             # Create final DataFrame with original data
-#             result_df = original_df.copy()
-
-#             # Add each indicator back to original timeframe
-#             for col in indicator_columns:
-#                 # Reindex to original timeframe and forward fill
-#                 result_df[col] = daily_indicators[col].reindex(
-#                     original_df.index, method='ffill'
-#                 )
-
-#             # # Final forward fill and backward fill for any remaining NaNs
-#             # result_df[indicator_columns] = result_df[indicator_columns].ffill()
-
-#             print(f"Added indicators: {indicator_columns}")
-#             print(f"Original shape: {original_df.shape}, Final shape: {result_df.shape}")
-
-#             return result_df
-
-#         except Exception as e:
-#             print(f"Error calculating indicators: {str(e)}")
-#             print(f"Shape of input DataFrame: {df.shape}")
-#             print(f"Available columns: {df.columns.tolist()}")
-#             print(f"Date range: {df.index[0]} to {df.index[-1]}")
-#             raise
-
-#     def get_available_indicators(self) -> list:
-#         """Get list of available indicators."""
-#         return list(self.indicator_params.keys())
-
-#     def update_params(self, new_params: dict) -> None:
-#         """Update indicator parameters."""
-#         self.indicator_params.update(new_params)
-
-#     # def _add_ichimoku(self, df: pd.DataFrame, params: Dict) -> None:
-#     #     """Calculate Ichimoku Cloud indicators."""
-#     #     high = df['high']
-#     #     low = df['low']
-
-#     #     # Calculate Tenkan-sen (Conversion Line)
-#     #     period9_high = high.rolling(
-#     #         window=params['conversion_line_period']).max()
-#     #     period9_low = low.rolling(
-#     #         window=params['conversion_line_period']).min()
-#     #     df['tenkan_sen'] = (period9_high + period9_low) / 2
-
-#     #     # Calculate Kijun-sen (Base Line)
-#     #     period26_high = high.rolling(window=params['base_line_period']).max()
-#     #     period26_low = low.rolling(window=params['base_line_period']).min()
-#     #     df['kijun_sen'] = (period26_high + period26_low) / 2
-
-#     #     # Calculate Senkou Span A (Leading Span A)
-#     #     df['senkou_span_a'] = ((df['tenkan_sen'] + df['kijun_sen']) / 2).shift(
-#     #         params['displacement']
-#     #     )
-
-#     #     # Calculate Senkou Span B (Leading Span B)
-#     #     period52_high = high.rolling(
-#     #         window=params['lagging_span_period']).max()
-#     #     period52_low = low.rolling(window=params['lagging_span_period']).min()
-#     #     df['senkou_span_b'] = ((period52_high + period52_low) / 2).shift(
-#     #         params['displacement']
-#     #     )
-
-#     #     # Calculate Chikou Span (Lagging Span)
-#     #     df['chikou_span'] = df['close'].shift(-params['displacement'])
-
-#     def _add_ichimoku(self, df: pd.DataFrame) -> None:
-#         """Calculate Ichimoku Cloud indicators using pandas_ta."""
-
-#         # Calculate ichimoku with append=True to add columns directly to dataframe
-#         df.ta.ichimoku(
-#             high='high',
-#             low='low',
-#             close='close',
-#             append=True,
-#             lookahead=False
-#         )
-
-#         # Rename columns to match our convention
-#         df.rename(columns={
-#             'ISA_9': 'senkou_span_a',
-#             'ISB_26': 'senkou_span_b',
-#             'ITS_9': 'tenkan_sen',
-#             'IKS_26': 'kijun_sen'
-#         }, inplace=True)
+        # Combine original data with both sets of indicators
+        result = pd.concat([df, aligned_indicators], axis=1)
+        return result.dropna()

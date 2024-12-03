@@ -35,7 +35,7 @@ class DataPreprocessor:
             method: Normalization method ('robust', 'zscore', or 'minmax')
         """
         df_normalized = df.copy()
-        print(f"Normalizing features: {features}")
+        # print(f"Normalizing features: {features}")
         for feature in features:
             if feature not in df.columns:
                 continue
@@ -190,11 +190,11 @@ class DataPreprocessor:
         for feature in features:
             if feature in price_relative_indicators:
                 df_normalized[feature] = df[feature] / df['close']
-                print(f"Normalized {feature} by price")
+                # print(f"Normalized {feature} by price")
 
             elif feature in percentage_indicators:
                 df_normalized[feature] = df[feature] / 100.0
-                print(f"Normalized {feature} by percentage")
+                # print(f"Normalized {feature} by percentage")
 
             # Skip volume and other unspecified features
             elif feature not in ['open', 'high', 'low', 'close', 'volume']:

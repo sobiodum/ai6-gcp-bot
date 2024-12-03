@@ -1,10 +1,11 @@
+from typing import Dict, Optional
 from utils.logging_utils import setup_logging, get_logger
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 import gymnasium as gym
 from gymnasium import spaces
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from numba import jit  # Add numba for performance-critical calculations
 # Add the project root to the Python path
@@ -29,6 +30,150 @@ class MarketSession(Enum):
     LONDON = 1
     NEW_YORK = 2
     OFF_HOURS = 3
+
+
+@dataclass
+class TradingPairCosts:
+    default_cost: float = 0.0001
+    pair_costs: Dict[str, float] = field(default_factory=lambda: {})
+
+    def __post_init__(self):
+        """
+        Initialize the pair_costs dictionary after the dataclass is instantiated.
+        This method is automatically called after __init__.
+        """
+        default_pairs = {
+            # Major Pairs
+            'EUR_USD': self.default_cost,
+            'GBP_USD': self.default_cost,
+            'USD_JPY': self.default_cost,
+            'USD_CHF': self.default_cost,
+            'USD_CAD': self.default_cost,
+            'AUD_USD': self.default_cost,
+            'NZD_USD': self.default_cost,
+
+            # Cross Pairs
+            'EUR_GBP': self.default_cost,
+            'EUR_CHF': self.default_cost,
+            'EUR_JPY': self.default_cost,
+            'EUR_CAD': self.default_cost,
+            'GBP_CHF': self.default_cost,
+            'GBP_JPY': self.default_cost,
+            'CHF_JPY': self.default_cost,
+            'AUD_JPY': self.default_cost,
+            'NZD_JPY': self.default_cost,
+
+            # Precious Metals
+            'XAU_USD': self.default_cost,  # Gold
+            'XAG_USD': self.default_cost,  # Silver
+        }
+        self.pair_costs.update(default_pairs)
+
+    def get_cost(self, pair: str) -> float:
+        """
+        Get the trading cost for a specific currency pair.
+
+        Args:
+            pair: Currency pair symbol (e.g., 'EUR_USD')
+
+        Returns:
+            float: Trading cost for the pair, or default cost if pair not found
+        """
+        return self.pair_costs.get(pair, self.default_cost)
+
+
+@dataclass
+class TradingPairCosts1:
+    """Manages trading costs for different currency pairs."""
+
+    base_spreads = {
+        # Major Pairs
+        'EUR_USD': 0.000157,
+        'GBP_USD': 0.00015,
+        'USD_JPY': 0.011,
+        'AUD_USD': 0.00012,
+        'USD_CAD': 0.00014,
+        'USD_CHF': 0.00016,
+
+        # Cross Pairs
+        'EUR_GBP': 0.0002,
+        'EUR_JPY': 0.016,
+        'GBP_JPY': 0.022,
+        'EUR_CHF': 0.00022,
+        'EUR_CAD': 0.00025,
+        'GBP_CHF': 0.00028,
+        'CHF_JPY': 0.025,
+        'AUD_JPY': 0.022,
+        'NZD_USD': 0.00018,
+        'NZD_JPY': 0.025,
+
+        # Precious Metals
+        'XAU_USD': 0.45,
+        'XAG_USD': 0.021
+    }
+
+    session_multipliers = {
+        'ASIAN': 1.1,
+        'LONDON': 1.0,
+        'NEW_YORK': 1.0,
+        'OFF_HOURS': 1.2
+    }
+
+    def get_cost(self, pair: str, session: str = 'LONDON') -> float:
+        """Get trading cost for a pair during specific session."""
+        base_cost = self.base_spreads.get(pair, 0.0001)
+        # multiplier = self.session_multipliers.get(session, 1.2)
+        return base_cost
+
+
+@dataclass
+class TradingPairNotional:
+    default_notional: float = 100_000.0
+    pair_notional: Dict[str, float] = field(default_factory=lambda: {})
+
+    def __post_init__(self):
+        """
+        Initialize the notional dictionary after the dataclass is instantiated.
+        This method is automatically called after __init__.
+        """
+        default_pairs = {
+            # Major Pairs
+            'EUR_USD': 94_510.0,
+            'GBP_USD': 78_500.0,
+            'USD_JPY': self.default_notional,
+            'USD_CHF': self.default_notional,
+            'USD_CAD': self.default_notional,
+            'AUD_USD': 153_000.0,
+            'NZD_USD': 171_430.0,
+
+            # Cross Pairs
+            'EUR_GBP': 94_510,
+            'EUR_CHF': 94_510,
+            'EUR_JPY': 94_510,
+            'EUR_CAD': 94_510,
+            'GBP_CHF': 78_500.0,
+            'GBP_JPY': 78_500.0,
+            'CHF_JPY': 88_100.0,
+            'AUD_JPY': 153_000.0,
+            'NZD_JPY': 171_430.0,
+
+            # Precious Metals
+            'XAU_USD': 37.68,  # Gold
+            'XAG_USD': 3_266  # Silver
+        }
+        self.pair_notional.update(default_pairs)
+
+    def get_notional(self, pair: str) -> float:
+        """
+        Get the trading notional for a specific currency pair.
+
+        Args:
+            pair: Currency pair symbol (e.g., 'EUR_USD')
+
+        Returns:
+            float: Trading notional for the pair, or default notional if pair not found
+        """
+        return self.pair_costs.get(pair, self.default_cost)
 
 
 @dataclass
@@ -64,9 +209,12 @@ class ForexTradingEnv(gym.Env):
         df: pd.DataFrame,
         pair: str,
         initial_balance: float = 1_000_000.0,
+        trading_notional: Optional[TradingPairNotional] = None,
         trade_size: float = 100_000.0,
         max_position_size: float = 1.0,
         transaction_cost: float = 0.0001,
+        trading_costs: Optional[TradingPairCosts] = None,  # New parameter
+        trading_costs1: Optional[TradingPairCosts1] = None,
         reward_scaling: float = 1e-4,
         sequence_length: int = 5,
         random_start: bool = True,
@@ -85,11 +233,19 @@ class ForexTradingEnv(gym.Env):
         self.df = df
         # Basic configuration
         self.pair = pair
+        # self.trading_costs = trading_costs or TradingPairCosts()
+        # self.transaction_cost = self.trading_costs.get_cost(pair)
+        self.trading_costs = trading_costs or TradingPairCosts1()
+        self.transaction_cost = self.trading_costs.get_cost(pair)
         self.base_currency, self.quote_currency = pair.split('_')
         self.initial_balance = initial_balance
-        self.trade_size = trade_size
+        # Initialize trading notional handler
+        self.trading_notional = trading_notional or TradingPairNotional()
+        # Get the correct notional for this pair
+        self.trade_size = self.trading_notional.pair_notional.get(
+            pair, 100_000.0)
         self.max_position_size = max_position_size
-        self.transaction_cost = transaction_cost
+        # self.transaction_cost = transaction_cost
         self.reward_scaling = reward_scaling
         self.sequence_length = sequence_length
         self.random_start = random_start
@@ -169,6 +325,7 @@ class ForexTradingEnv(gym.Env):
         logger.info(f"Win Rate: {win_rate:.2f}%")
         logger.info(f"Initial Balance: {self.initial_balance:.2f}")
         logger.info(f"Final Balance: {self.balance:.2f}")
+        logger.info(f"Trade_size: {self.trade_size:.2f}")
         logger.info("-" * 50)
         pass
 
@@ -240,6 +397,22 @@ class ForexTradingEnv(gym.Env):
 
         return self._get_observation_hstack(), reward, terminated, truncated, self._get_info()
 
+    def _calculate_transaction_cost(self, current_price: float) -> float:
+        """
+        Calculate transaction cost in the same currency as PnL is calculated.
+        For USD-quoted pairs, keep costs in USD to match PnL calculations.
+        For other pairs, convert to base currency.
+        """
+        # Calculate cost in quote currency
+        quote_currency_cost = self.trade_size * self.transaction_cost
+
+        if self.quote_currency == 'USD':
+            # For XAU/USD, XAG/USD, keep cost in USD to match PnL
+            return quote_currency_cost
+        else:
+            # For other pairs like USD/JPY, convert to base currency
+            return quote_currency_cost / current_price
+
     def _preprocess_data(self, df: pd.DataFrame):
         """Convert DataFrame to structured arrays for faster access."""
         # Store timestamps as integers for faster indexing
@@ -258,8 +431,8 @@ class ForexTradingEnv(gym.Env):
                 col for col in df.columns if col not in actual_excluded]
 
         # Log selected features
-        logger.info(
-            f"Selected features for observation space: {self.feature_columns}")
+        # logger.info(
+        #     f"Selected features for observation space: {self.feature_columns}")
 
         # Set market_features before using it in setup_spaces
         self.market_features = len(self.feature_columns)
@@ -319,7 +492,7 @@ class ForexTradingEnv(gym.Env):
         """Initialize flattened observation space."""
         # Calculate total observation size
         market_size = self.sequence_length * self.market_features
-        position_info_size = 2  # Balance and position direction
+        position_info_size = 1  # Balance and position direction
 
         total_size = market_size + position_info_size
 
@@ -575,7 +748,7 @@ class ForexTradingEnv(gym.Env):
 
             # Position info
             position_info = np.array([
-                self.balance / self.initial_balance,  # Normalized balance
+                # self.balance / self.initial_balance,  # Normalized balance
                 self.current_position,                # Position direction
             ])
 
@@ -692,7 +865,8 @@ class ForexTradingEnv(gym.Env):
         """Open a new position."""
 
         entry_price = current_price
-        transaction_cost = self.transaction_cost * self.trade_size
+        # transaction_cost = self.transaction_cost * self.trade_size / current_price
+        transaction_cost = self._calculate_transaction_cost(current_price)
         self.balance -= transaction_cost
 
         # Add transaction costs
@@ -716,7 +890,8 @@ class ForexTradingEnv(gym.Env):
         """Close current position and return reward."""
         if not self.position:
             return 0.0
-        transaction_cost = self.transaction_cost * self.trade_size
+        # transaction_cost = self.transaction_cost * self.trade_size / current_price
+        transaction_cost = self._calculate_transaction_cost(current_price)
         # Deduct transaction cost from balance
         self.balance -= transaction_cost
         # Calculate PnL with transaction costs
@@ -886,7 +1061,7 @@ class ForexTradingEnv(gym.Env):
             'position_duration': position_duration,
 
             # Trading costs and metrics
-            'trading_costs': self.transaction_cost * (self.position.size if self.position else 0.0),
+            'trading_costs': self._calculate_transaction_cost(current_price) if self.position else 0.0,
             'avg_trade_pnl': self.total_pnl / max(1, self.total_trades),
 
             # Episode progress
