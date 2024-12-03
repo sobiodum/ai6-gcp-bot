@@ -190,3 +190,168 @@
 2024-12-03 17:20:05 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.026481
 2024-12-03 17:20:05 - trading_system - INFO - deploy_final.py:1379 - Decision for XAG_USD: SHORT -> SHORT
 2024-12-03 17:20:05 - apscheduler.executors.default - INFO - base.py:156 - Job "TradingSystem.trading_cycle (trigger: cron[minute='*/5', second='0'], next run at: 2024-12-03 17:25:00 CET)" executed successfully
+2024-12-03 17:25:00 - apscheduler.executors.default - INFO - base.py:129 - Running job "TradingSystem.trading_cycle (trigger: cron[minute='*/5', second='0'], next run at: 2024-12-03 17:30:00 CET)" (scheduled at 2024-12-03 17:25:00+01:00)
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1335 - Starting trading cycle
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for EUR_USD - time 2024-12-03 16:25:00
+2024-12-03 17:25:00 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/EUR_USD/candles
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for EUR_USD at time 2024-12-03 16:25:00
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:815 - Last step for EUR_USD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for EUR_USD
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1350 - Current position for EUR_USD: LONG
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for EUR_USD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1379 - Decision for EUR_USD: LONG -> LONG
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for GBP_USD - time 2024-12-03 16:25:00
+2024-12-03 17:25:00 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/GBP_USD/candles
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for GBP_USD at time 2024-12-03 16:25:00
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:815 - Last step for GBP_USD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for GBP_USD
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1350 - Current position for GBP_USD: LONG
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for GBP_USD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:1379 - Decision for GBP_USD: LONG -> LONG
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for USD_JPY - time 2024-12-03 16:25:00
+2024-12-03 17:25:00 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/USD_JPY/candles
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for USD_JPY at time 2024-12-03 16:25:00
+2024-12-03 17:25:00 - trading_system - INFO - deploy_final.py:815 - Last step for USD_JPY - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for USD_JPY
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1350 - Current position for USD_JPY: SHORT
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for USD_JPY: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1379 - Decision for USD_JPY: SHORT -> SHORT
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for USD_CHF - time 2024-12-03 16:25:01
+2024-12-03 17:25:01 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/USD_CHF/candles
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for USD_CHF at time 2024-12-03 16:25:01
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:815 - Last step for USD_CHF - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for USD_CHF
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1350 - Current position for USD_CHF: LONG
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for USD_CHF: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1379 - Decision for USD_CHF: LONG -> LONG
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for USD_CAD - time 2024-12-03 16:25:01
+2024-12-03 17:25:01 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/USD_CAD/candles
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for USD_CAD at time 2024-12-03 16:25:01
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:815 - Last step for USD_CAD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for USD_CAD
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1350 - Current position for USD_CAD: LONG
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for USD_CAD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1379 - Decision for USD_CAD: LONG -> LONG
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for AUD_USD - time 2024-12-03 16:25:01
+2024-12-03 17:25:01 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/AUD_USD/candles
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for AUD_USD at time 2024-12-03 16:25:01
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:815 - Last step for AUD_USD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for AUD_USD
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1350 - Current position for AUD_USD: LONG
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for AUD_USD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:1379 - Decision for AUD_USD: LONG -> LONG
+2024-12-03 17:25:01 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for NZD_USD - time 2024-12-03 16:25:01
+2024-12-03 17:25:01 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/NZD_USD/candles
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for NZD_USD at time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:815 - Last step for NZD_USD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for NZD_USD
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1350 - Current position for NZD_USD: LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for NZD_USD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1379 - Decision for NZD_USD: LONG -> LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for EUR_GBP - time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/EUR_GBP/candles
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for EUR_GBP at time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:815 - Last step for EUR_GBP - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for EUR_GBP
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1350 - Current position for EUR_GBP: LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for EUR_GBP: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1379 - Decision for EUR_GBP: LONG -> LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for EUR_CHF - time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/EUR_CHF/candles
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for EUR_CHF at time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:815 - Last step for EUR_CHF - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for EUR_CHF
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1350 - Current position for EUR_CHF: LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for EUR_CHF: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1379 - Decision for EUR_CHF: LONG -> LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for EUR_JPY - time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/EUR_JPY/candles
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for EUR_JPY at time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:815 - Last step for EUR_JPY - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for EUR_JPY
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1350 - Current position for EUR_JPY: LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for EUR_JPY: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:1379 - Decision for EUR_JPY: LONG -> LONG
+2024-12-03 17:25:02 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for EUR_CAD - time 2024-12-03 16:25:02
+2024-12-03 17:25:02 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/EUR_CAD/candles
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for EUR_CAD at time 2024-12-03 16:25:03
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:815 - Last step for EUR_CAD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for EUR_CAD
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1350 - Current position for EUR_CAD: LONG
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for EUR_CAD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1379 - Decision for EUR_CAD: LONG -> LONG
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for GBP_CHF - time 2024-12-03 16:25:03
+2024-12-03 17:25:03 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/GBP_CHF/candles
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for GBP_CHF at time 2024-12-03 16:25:03
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:815 - Last step for GBP_CHF - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for GBP_CHF
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1350 - Current position for GBP_CHF: LONG
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for GBP_CHF: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1379 - Decision for GBP_CHF: LONG -> LONG
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for GBP_JPY - time 2024-12-03 16:25:03
+2024-12-03 17:25:03 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/GBP_JPY/candles
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for GBP_JPY at time 2024-12-03 16:25:03
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:815 - Last step for GBP_JPY - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for GBP_JPY
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1350 - Current position for GBP_JPY: LONG
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for GBP_JPY: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:1379 - Decision for GBP_JPY: LONG -> LONG
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for CHF_JPY - time 2024-12-03 16:25:03
+2024-12-03 17:25:03 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/CHF_JPY/candles
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for CHF_JPY at time 2024-12-03 16:25:03
+2024-12-03 17:25:03 - trading_system - INFO - deploy_final.py:815 - Last step for CHF_JPY - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for CHF_JPY
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1350 - Current position for CHF_JPY: LONG
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for CHF_JPY: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1379 - Decision for CHF_JPY: LONG -> LONG
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for AUD_JPY - time 2024-12-03 16:25:04
+2024-12-03 17:25:04 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/AUD_JPY/candles
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for AUD_JPY at time 2024-12-03 16:25:04
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:815 - Last step for AUD_JPY - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for AUD_JPY
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1350 - Current position for AUD_JPY: NO_POSITION
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for AUD_JPY: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1379 - Decision for AUD_JPY: NO_POSITION -> NO_POSITION
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for NZD_JPY - time 2024-12-03 16:25:04
+2024-12-03 17:25:04 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/NZD_JPY/candles
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for NZD_JPY at time 2024-12-03 16:25:04
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:815 - Last step for NZD_JPY - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for NZD_JPY
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1350 - Current position for NZD_JPY: NO_POSITION
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for NZD_JPY: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1379 - Decision for NZD_JPY: NO_POSITION -> NO_POSITION
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for XAU_USD - time 2024-12-03 16:25:04
+2024-12-03 17:25:04 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/XAU_USD/candles
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for XAU_USD at time 2024-12-03 16:25:04
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:815 - Last step for XAU_USD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for XAU_USD
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1350 - Current position for XAU_USD: SHORT
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for XAU_USD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:1379 - Decision for XAU_USD: SHORT -> SHORT
+2024-12-03 17:25:04 - trading_system - INFO - deploy_final.py:782 - Fetching missing candles for XAG_USD - time 2024-12-03 16:25:04
+2024-12-03 17:25:04 - oandapyV20.oandapyV20 - INFO - oandapyV20.py:261 - performing request https://api-fxpractice.oanda.com/v3/instruments/XAG_USD/candles
+2024-12-03 17:25:05 - trading_system - INFO - deploy_final.py:813 - Fetched 2 candles for XAG_USD at time 2024-12-03 16:25:05
+2024-12-03 17:25:05 - trading_system - INFO - deploy_final.py:815 - Last step for XAG_USD - 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:05 - trading_system - INFO - deploy_final.py:961 - Successfully saved raw data for XAG_USD
+2024-12-03 17:25:05 - trading_system - INFO - deploy_final.py:1350 - Current position for XAG_USD: SHORT
+2024-12-03 17:25:05 - trading_system - INFO - deploy_final.py:1365 - Latest data timestamp for XAG_USD: 2024-12-03 16:20:00+00:00
+2024-12-03 17:25:05 - trading_system - INFO - deploy_final.py:1367 - Data age: 0 days 00:05:00.045286
+2024-12-03 17:25:05 - trading_system - INFO - deploy_final.py:1379 - Decision for XAG_USD: SHORT -> SHORT
+2024-12-03 17:25:05 - apscheduler.executors.default - INFO - base.py:156 - Job "TradingSystem.trading_cycle (trigger: cron[minute='*/5', second='0'], next run at: 2024-12-03 17:30:00 CET)" executed successfully

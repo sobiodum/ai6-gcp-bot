@@ -42,7 +42,7 @@ TRADING_CONFIG = {
     'oanda_api_key': '9317ace4596d61e3e98b1a53b2342483-45d3ad4084c80b111727a9fada9ef0ff',
 
     # GCP bucket where your parquet files are stored
-    'gcp_bucket_name': 'fx_data_sets_15min_1h_tech_norm',
+
 
     # Base path where your trained models are stored locally
     'model_base_path': './models',
