@@ -776,12 +776,23 @@ class FastDataManager:
 
     def fetch_missing_candles(self, pair: str, last_timestamp: pd.Timestamp) -> pd.DataFrame:
         """
-        Fetches new candles from OANDA with improved error handling.
-        Only fetches OHLC data without indicators.
+        Fetches new candles from OANDA with smart handling of incomplete candles.
+
+        Strategy:
+        1. Calculate the expected candle timestamps based on 5-min intervals
+        2. Fetch both complete and incomplete candles
+        3. Use incomplete candles only when they're close to completion
+        4. Implement safety checks for data quality
         """
         logger.info(
             f'Fetching missing candles for {pair} - time {get_current_time()}')
+
         try:
+            # Calculate the expected current candle timestamp (rounded down to 5-min intervals)
+            current_time = pd.Timestamp.now(tz='UTC')
+            expected_candle_time = current_time.floor('5min')
+
+            # Set up parameters for OANDA request
             params = {
                 "from": last_timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
                 "granularity": "M5",
@@ -795,14 +806,44 @@ class FastDataManager:
             if not candles:
                 return pd.DataFrame()
 
-            # Extract only OHLC data
-            df_list = [{
-                'timestamp': pd.to_datetime(candle['time'], utc=True),
-                'open': float(candle['mid']['o']),
-                'high': float(candle['mid']['h']),
-                'low': float(candle['mid']['l']),
-                'close': float(candle['mid']['c']),
-            } for candle in candles if candle['complete']]
+            df_list = []
+            logger.info(f'CANDLES for {pair} - time: {current_time}')
+            logger.info('-'*50)
+            logger.info(candles)
+            logger.info('-'*50)
+            for candle in candles:
+                candle_time = pd.to_datetime(candle['time'], utc=True)
+
+                # Logic for handling different candle scenarios
+                should_include = False
+
+                if candle['complete']:
+                    # Always include complete candles
+                    should_include = True
+                else:
+                    # For incomplete candles, check if it's the current expected candle
+                    if candle_time == expected_candle_time:
+                        # Calculate how far into the 5-min interval we are
+                        elapsed_time = (
+                            current_time - candle_time).total_seconds()
+
+                        # Include if we're at least 4.5 minutes into the candle
+                        # This means the candle is 90% complete
+                        if elapsed_time >= 270:  # 4.5 minutes = 270 seconds
+                            should_include = True
+                            logger.info(f"Including incomplete candle for {pair} at {candle_time} "
+                                        f"({elapsed_time:.1f} seconds elapsed)")
+
+                if should_include:
+                    df_list.append({
+                        'timestamp': candle_time,
+                        'open': float(candle['mid']['o']),
+                        'high': float(candle['mid']['h']),
+                        'low': float(candle['mid']['l']),
+                        'close': float(candle['mid']['c']),
+                        # Add flag for tracking
+                        'is_complete': candle['complete']
+                    })
 
             if not df_list:
                 return pd.DataFrame()
@@ -810,15 +851,68 @@ class FastDataManager:
             df = pd.DataFrame(df_list)
             df.set_index('timestamp', inplace=True)
 
+            # Log information about the fetched data
             logger.info(
                 f"Fetched {len(df)} candles for {pair} at time {get_current_time()}")
-            logger.info(f'Last step for {pair} - {df.index[-1]}')
+            logger.info(f'Last candle timestamp for {pair}: {df.index[-1]}')
+            logger.info(df)
+
+            incomplete_count = len(df[~df['is_complete']])
+            if incomplete_count > 0:
+                logger.info(
+                    f"Included {incomplete_count} incomplete candles for {pair}")
 
             return df
 
         except Exception as e:
             logger.error(f"Error fetching candles for {pair}: {str(e)}")
             return pd.DataFrame()
+
+    # def fetch_missing_candles(self, pair: str, last_timestamp: pd.Timestamp) -> pd.DataFrame:
+    #     """
+    #     Fetches new candles from OANDA with improved error handling.
+    #     Only fetches OHLC data without indicators.
+    #     """
+    #     logger.info(
+    #         f'Fetching missing candles for {pair} - time {get_current_time()}')
+    #     try:
+    #         params = {
+    #             "from": last_timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    #             "granularity": "M5",
+    #             "price": "M"
+    #         }
+
+    #         r = instruments.InstrumentsCandles(instrument=pair, params=params)
+    #         response = client.request(r)
+    #         candles = response.get('candles', [])
+
+    #         if not candles:
+    #             return pd.DataFrame()
+
+    #         # Extract only OHLC data
+    #         df_list = [{
+    #             'timestamp': pd.to_datetime(candle['time'], utc=True),
+    #             'open': float(candle['mid']['o']),
+    #             'high': float(candle['mid']['h']),
+    #             'low': float(candle['mid']['l']),
+    #             'close': float(candle['mid']['c']),
+    #         } for candle in candles if candle['complete']]
+
+    #         if not df_list:
+    #             return pd.DataFrame()
+
+    #         df = pd.DataFrame(df_list)
+    #         df.set_index('timestamp', inplace=True)
+
+    #         logger.info(
+    #             f"Fetched {len(df)} candles for {pair} at time {get_current_time()}")
+    #         logger.info(f'Last step for {pair} - {df.index[-1]}')
+
+    #         return df
+
+    #     except Exception as e:
+    #         logger.error(f"Error fetching candles for {pair}: {str(e)}")
+    #         return pd.DataFrame()
 
     def initialize_pair(self, pair: str) -> bool:
         """
@@ -876,8 +970,8 @@ class FastDataManager:
 
     def update_pair_data(self, pair: str) -> bool:
         """
-        Updates data for a pair by fetching new candles and recalculating indicators.
-        Only appends new data to raw OHLC storage.
+        Updates data for a pair, maintaining clean historical data while allowing trading
+        decisions on recent incomplete candles.
         """
         try:
             # Get current state
@@ -902,30 +996,43 @@ class FastDataManager:
                 new_data = self.fetch_missing_candles(pair, last_timestamp)
 
                 if not new_data.empty:
-                    # Combine with existing raw data
-                    combined_raw = pd.concat([current_raw_data, new_data])
-                    combined_raw = combined_raw[~combined_raw.index.duplicated(
+                    # For storage: only use complete candles
+                    complete_candles = new_data[new_data['is_complete']].drop(
+                        'is_complete', axis=1)
+
+                    if not complete_candles.empty:
+                        # Update storage with only complete candles
+                        storage_data = pd.concat(
+                            [current_raw_data, complete_candles])
+                        storage_data = storage_data[~storage_data.index.duplicated(
+                            keep='last')]
+                        storage_data.sort_index(inplace=True)
+
+                        # Queue save operation for clean historical data
+                        self.save_queue.put((pair, storage_data))
+
+                        # Update state with new storage data
+                        current_state.update_raw_data(storage_data)
+
+                    # For trading: use all candles including incomplete ones
+                    trading_data = pd.concat(
+                        [current_raw_data, new_data.drop('is_complete', axis=1)])
+                    trading_data = trading_data[~trading_data.index.duplicated(
                         keep='last')]
-                    combined_raw.sort_index(inplace=True)
+                    trading_data.sort_index(inplace=True)
 
-                    # Queue raw data save operation
-                    self.save_queue.put((pair, combined_raw))
-
-                    # Update state with new raw data
-                    current_state.update_raw_data(combined_raw)
-
-                    # Calculate indicators and normalize (in memory only)
+                    # Calculate indicators and normalize using the trading data
                     processed_df = self.indicator_manager.calculate_indicators(
-                        combined_raw)
+                        trading_data)
                     normalized_df = self.data_processor.normalize_simple(
                         processed_df)
 
-                    # Update processed data in memory
+                    # Update processed data in memory for trading decisions
                     current_state.update_processed_data(
                         processed_df, normalized_df)
                     return True
 
-            return False
+                return False
 
         except Exception as e:
             logger.error(f"Error updating data for {pair}: {str(e)}")

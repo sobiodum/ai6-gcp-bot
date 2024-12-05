@@ -372,8 +372,8 @@ class IndicatorManager:
                     result_df[col] = indicator_df[col]
 
             # print(f"Added indicators: {indicator_columns}")
-            print(
-                f"Original shape: {original_df.shape}, Final shape: {result_df.shape}")
+            # print(
+            #     f"Original shape: {original_df.shape}, Final shape: {result_df.shape}")
             result_df.dropna(inplace=True)
             return result_df
 
