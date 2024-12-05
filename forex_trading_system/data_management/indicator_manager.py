@@ -226,6 +226,136 @@ class IndicatorManager:
             'dmi': {'period': 14},
         }
 
+    def calculate_indicators_unbiased(self, df: pd.DataFrame, selected_indicators: list = None) -> pd.DataFrame:
+        """Calculate technical indicators with proper error handling and validation."""
+        try:
+            # Create a copy of the input DataFrame
+            indicator_df = df.copy()
+
+            if selected_indicators is None:
+                selected_indicators = ['sma', 'rsi', 'macd',
+                                       'bollinger', 'atr', 'adx', 'dmi', 'ichimoku']
+
+            # SMA calculations
+            if 'sma' in selected_indicators:
+                for period in self.indicator_params['sma']['periods']:
+                    sma = talib.SMA(df['close'].values, timeperiod=period)
+                    indicator_df[f'sma_{period}'] = sma
+
+            # RSI
+            if 'rsi' in selected_indicators:
+                rsi = talib.RSI(
+                    df['close'].values, timeperiod=self.indicator_params['rsi']['period'])
+                indicator_df['rsi'] = rsi
+
+            # MACD
+            if 'macd' in selected_indicators:
+                macd_params = self.indicator_params['macd']
+                macd, signal, hist = talib.MACD(
+                    df['close'].values,
+                    fastperiod=macd_params['fastperiod'],
+                    slowperiod=macd_params['slowperiod'],
+                    signalperiod=macd_params['signalperiod']
+                )
+                indicator_df['macd'] = macd
+                indicator_df['macd_signal'] = signal
+                indicator_df['macd_hist'] = hist
+
+            # Bollinger Bands
+            if 'bollinger' in selected_indicators:
+                bb_params = self.indicator_params['bollinger']
+                upper, middle, lower = talib.BBANDS(
+                    df['close'].values,
+                    timeperiod=bb_params['timeperiod'],
+                    nbdevup=bb_params['nbdevup'],
+                    nbdevdn=bb_params['nbdevdn']
+                )
+                indicator_df['bb_upper'] = upper
+                indicator_df['bb_middle'] = middle
+                indicator_df['bb_lower'] = lower
+
+                # Calculate additional Bollinger Band metrics
+                indicator_df['bb_bandwidth'] = (upper - lower) / middle * 100
+                indicator_df['bb_percent'] = (
+                    df['close'] - lower) / (upper - lower) * 100
+
+            # ATR
+            if 'atr' in selected_indicators:
+                atr = talib.ATR(
+                    df['high'].values,
+                    df['low'].values,
+                    df['close'].values,
+                    timeperiod=self.indicator_params['atr']['period']
+                )
+                indicator_df['atr'] = atr
+
+            # DMI
+            if 'dmi' in selected_indicators:
+                plus_di = talib.PLUS_DI(
+                    df['high'].values,
+                    df['low'].values,
+                    df['close'].values,
+                    timeperiod=self.indicator_params['dmi']['period']
+                )
+                minus_di = talib.MINUS_DI(
+                    df['high'].values,
+                    df['low'].values,
+                    df['close'].values,
+                    timeperiod=self.indicator_params['dmi']['period']
+                )
+                indicator_df['plus_di'] = plus_di
+                indicator_df['minus_di'] = minus_di
+
+            # ADX
+            if 'adx' in selected_indicators:
+                adx = talib.ADX(
+                    df['high'].values,
+                    df['low'].values,
+                    df['close'].values,
+                    timeperiod=self.indicator_params['adx']['period']
+                )
+                indicator_df['adx'] = adx
+
+            # Ichimoku Cloud
+            if 'ichimoku' in selected_indicators:
+                ichimoku_values = self._add_ichimoku_no_look_ahead(df)
+
+                # Assign each calculated indicator to the output DataFrame
+                for col_name, values in ichimoku_values.items():
+                    indicator_df[col_name] = values
+                # # Calculate Ichimoku components
+                # high_values = df['high'].values
+                # low_values = df['low'].values
+
+                # # Tenkan-sen (Conversion Line): (9-period high + 9-period low)/2
+                # period9_high = pd.Series(high_values).rolling(window=9).max()
+                # period9_low = pd.Series(low_values).rolling(window=9).min()
+                # indicator_df['tenkan_sen'] = (period9_high + period9_low) / 2
+
+                # # Kijun-sen (Base Line): (26-period high + 26-period low)/2
+                # period26_high = pd.Series(high_values).rolling(window=26).max()
+                # period26_low = pd.Series(low_values).rolling(window=26).min()
+                # indicator_df['kijun_sen'] = (period26_high + period26_low) / 2
+
+                # # Senkou Span A (Leading Span A): (Conversion Line + Base Line)/2
+                # indicator_df['senkou_span_a'] = (
+                #     indicator_df['tenkan_sen'] + indicator_df['kijun_sen']) / 2
+
+                # # Senkou Span B (Leading Span B): (52-period high + 52-period low)/2
+                # period52_high = pd.Series(high_values).rolling(window=52).max()
+                # period52_low = pd.Series(low_values).rolling(window=52).min()
+                # indicator_df['senkou_span_b'] = (
+                #     period52_high + period52_low) / 2
+
+            return indicator_df
+
+        except Exception as e:
+            print(f"Error calculating indicators: {str(e)}")
+            print(f"Shape of input DataFrame: {df.shape}")
+            print(f"Available columns: {df.columns.tolist()}")
+            print(f"Date range: {df.index[0]} to {df.index[-1]}")
+            raise
+
     def calculate_indicators(
         self,
         df: pd.DataFrame,
@@ -374,7 +504,7 @@ class IndicatorManager:
             # print(f"Added indicators: {indicator_columns}")
             # print(
             #     f"Original shape: {original_df.shape}, Final shape: {result_df.shape}")
-            result_df.dropna(inplace=True)
+            # result_df.dropna(inplace=True)
             return result_df
 
         except Exception as e:
@@ -383,6 +513,33 @@ class IndicatorManager:
             print(f"Available columns: {df.columns.tolist()}")
             print(f"Date range: {df.index[0]} to {df.index[-1]}")
             raise
+
+    def _add_ichimoku_no_look_ahead(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculate Ichimoku Cloud indicators without lookahead bias.
+        Returns DataFrame with calculated indicators.
+        """
+        temp_df = df.copy()
+
+        # Calculate ichimoku with append=True to add columns directly to temp_df
+        temp_df.ta.ichimoku(
+            high='high',
+            low='low',
+            close='close',
+            append=True,
+            lookahead=False
+        )
+
+        # Rename the generated columns to your desired names
+        temp_df.rename(columns={
+            'ISA_9': 'senkou_span_a',
+            'ISB_26': 'senkou_span_b',
+            'ITS_9': 'tenkan_sen',
+            'IKS_26': 'kijun_sen'
+        }, inplace=True)
+
+        # Return just the DataFrame of these columns (NaNs may be present if not enough data)
+        return temp_df
 
     def _add_ichimoku(self, df: pd.DataFrame) -> None:
         """Calculate Ichimoku Cloud indicators using pandas_ta."""
@@ -396,13 +553,13 @@ class IndicatorManager:
             lookahead=False
         )
 
-        # Rename columns to match our convention
-        df.rename(columns={
-            'ISA_9': 'senkou_span_a',
-            'ISB_26': 'senkou_span_b',
-            'ITS_9': 'tenkan_sen',
-            'IKS_26': 'kijun_sen'
-        }, inplace=True)
+        #! Rename columns to match our convention
+        # df.rename(columns={
+        #     'ISA_9': 'senkou_span_a',
+        #     'ISB_26': 'senkou_span_b',
+        #     'ITS_9': 'tenkan_sen',
+        #     'IKS_26': 'kijun_sen'
+        # }, inplace=True)
 
 
 class DualTimeframeIndicators:
