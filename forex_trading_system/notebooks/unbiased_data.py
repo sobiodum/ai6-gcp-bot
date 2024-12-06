@@ -111,6 +111,8 @@ def prepare_unbiased_dataset_row_by_row(
         try:
             # Append current candle to cache
             data_cache.loc[idx] = row
+            if len(data_cache) > 800:
+                data_cache = data_cache.iloc[-800:]
 
             # Get data up to current time
             data_up_to_now = data_cache.loc[:idx]
@@ -140,16 +142,18 @@ def prepare_unbiased_dataset_row_by_row(
 
                 # Combine current candle with indicators
                 combined_row = pd.concat([row, last_indicator_row])
+                # logger.info(f"Combined row: {combined_row}")
             else:
                 # If no valid period data, use just the price data
                 combined_row = row.copy()
 
             # Store in dictionary using timestamp as key
             results_dict[idx] = combined_row.to_dict()
+            # print(results_dict)
 
-            if verbose and idx.minute == 0:  # Log only for hourly candles
-                logger.info(f"\nProcessing timestamp: {idx}")
-                logger.info(f"Period data shape: {period_data.shape}")
+            # if verbose and idx.minute == 0:  # Log only for hourly candles
+            # logger.info(f"\nProcessing timestamp: {idx}")
+            # logger.info(f"Period data shape: {period_data.shape}")
 
         except Exception as e:
             logger.error(f"Error processing row at {idx}: {str(e)}")
