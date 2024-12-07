@@ -118258,3 +118258,304 @@ Percentage of NaN values in indicator columns:
 2024-12-06 13:23:10,229 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 13:23:10.224479
 2024-12-06 13:23:14,186 - dataset_prep - INFO - Starting data preparation using row-by-row method...
 2024-12-06 13:23:14,901 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1753845, 4)
+2024-12-06 16:10:44,099 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 16:10:44.098718
+2024-12-06 16:10:44,689 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 16:10:45,356 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1753845, 4)
+2024-12-06 16:17:12,389 - dataset_prep - INFO - Starting processing for EUR_JPY at 2024-12-06 16:17:12.389134
+2024-12-06 16:17:12,928 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 16:17:13,529 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1753543, 4)
+2024-12-06 16:18:20,038 - dataset_prep - INFO - Starting processing for USD_CHF at 2024-12-06 16:18:20.038826
+2024-12-06 16:18:59,828 - dataset_prep - INFO - Starting processing for USD_CHF at 2024-12-06 16:18:59.828006
+2024-12-06 16:19:00,315 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 16:19:00,956 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1753577, 4)
+2024-12-06 19:13:54,802 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1753845, 23)
+2024-12-06 19:13:54,859 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2024-11-28 10:15:00+00:00
+2024-12-06 19:13:55,144 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:13:55,145 - dataset_prep - INFO - sma_20: 0.01%
+2024-12-06 19:13:55,145 - dataset_prep - INFO - sma_50: 0.03%
+2024-12-06 19:13:55,146 - dataset_prep - INFO - rsi: 0.01%
+2024-12-06 19:13:55,154 - dataset_prep - INFO - macd: 0.02%
+2024-12-06 19:13:55,155 - dataset_prep - INFO - macd_signal: 0.02%
+2024-12-06 19:13:55,156 - dataset_prep - INFO - macd_hist: 0.02%
+2024-12-06 19:13:55,166 - dataset_prep - INFO - bb_upper: 0.01%
+2024-12-06 19:13:55,167 - dataset_prep - INFO - bb_middle: 0.01%
+2024-12-06 19:13:55,168 - dataset_prep - INFO - bb_lower: 0.01%
+2024-12-06 19:13:55,169 - dataset_prep - INFO - bb_bandwidth: 0.01%
+2024-12-06 19:13:55,169 - dataset_prep - INFO - bb_percent: 0.01%
+2024-12-06 19:13:55,170 - dataset_prep - INFO - atr: 0.01%
+2024-12-06 19:13:55,170 - dataset_prep - INFO - plus_di: 0.01%
+2024-12-06 19:13:55,171 - dataset_prep - INFO - minus_di: 0.01%
+2024-12-06 19:13:55,171 - dataset_prep - INFO - adx: 0.02%
+2024-12-06 19:13:55,179 - dataset_prep - INFO - senkou_span_a: 0.03%
+2024-12-06 19:13:55,179 - dataset_prep - INFO - senkou_span_b: 100.00%
+2024-12-06 19:13:55,180 - dataset_prep - INFO - tenkan_sen: 0.03%
+2024-12-06 19:13:55,181 - dataset_prep - INFO - kijun_sen: 0.03%
+2024-12-06 19:25:32,453 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1753543, 23)
+2024-12-06 19:25:32,598 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2024-11-28 10:15:00+00:00
+2024-12-06 19:25:35,147 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:25:35,153 - dataset_prep - INFO - sma_20: 0.01%
+2024-12-06 19:25:35,155 - dataset_prep - INFO - sma_50: 0.03%
+2024-12-06 19:25:35,163 - dataset_prep - INFO - rsi: 0.01%
+2024-12-06 19:25:35,202 - dataset_prep - INFO - macd: 0.02%
+2024-12-06 19:25:35,204 - dataset_prep - INFO - macd_signal: 0.02%
+2024-12-06 19:25:35,205 - dataset_prep - INFO - macd_hist: 0.02%
+2024-12-06 19:25:35,304 - dataset_prep - INFO - bb_upper: 0.01%
+2024-12-06 19:25:35,305 - dataset_prep - INFO - bb_middle: 0.01%
+2024-12-06 19:25:35,671 - dataset_prep - INFO - bb_lower: 0.01%
+2024-12-06 19:25:35,672 - dataset_prep - INFO - bb_bandwidth: 0.01%
+2024-12-06 19:25:35,672 - dataset_prep - INFO - bb_percent: 0.01%
+2024-12-06 19:25:35,673 - dataset_prep - INFO - atr: 0.01%
+2024-12-06 19:25:35,673 - dataset_prep - INFO - plus_di: 0.01%
+2024-12-06 19:25:35,674 - dataset_prep - INFO - minus_di: 0.01%
+2024-12-06 19:25:35,675 - dataset_prep - INFO - adx: 0.02%
+2024-12-06 19:25:35,675 - dataset_prep - INFO - senkou_span_a: 0.03%
+2024-12-06 19:25:35,675 - dataset_prep - INFO - senkou_span_b: 100.00%
+2024-12-06 19:25:35,676 - dataset_prep - INFO - tenkan_sen: 0.03%
+2024-12-06 19:25:35,676 - dataset_prep - INFO - kijun_sen: 0.03%
+2024-12-06 19:26:46,996 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1753577, 23)
+2024-12-06 19:26:47,073 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2024-11-28 10:15:00+00:00
+2024-12-06 19:26:47,443 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:26:47,444 - dataset_prep - INFO - sma_20: 0.01%
+2024-12-06 19:26:47,444 - dataset_prep - INFO - sma_50: 0.03%
+2024-12-06 19:26:47,445 - dataset_prep - INFO - rsi: 0.01%
+2024-12-06 19:26:47,494 - dataset_prep - INFO - macd: 0.02%
+2024-12-06 19:26:47,495 - dataset_prep - INFO - macd_signal: 0.02%
+2024-12-06 19:26:47,496 - dataset_prep - INFO - macd_hist: 0.02%
+2024-12-06 19:26:47,497 - dataset_prep - INFO - bb_upper: 0.01%
+2024-12-06 19:26:47,497 - dataset_prep - INFO - bb_middle: 0.01%
+2024-12-06 19:26:47,497 - dataset_prep - INFO - bb_lower: 0.01%
+2024-12-06 19:26:47,498 - dataset_prep - INFO - bb_bandwidth: 0.01%
+2024-12-06 19:26:47,500 - dataset_prep - INFO - bb_percent: 0.01%
+2024-12-06 19:26:47,501 - dataset_prep - INFO - atr: 0.01%
+2024-12-06 19:26:47,501 - dataset_prep - INFO - plus_di: 0.01%
+2024-12-06 19:26:47,502 - dataset_prep - INFO - minus_di: 0.01%
+2024-12-06 19:26:47,502 - dataset_prep - INFO - adx: 0.02%
+2024-12-06 19:26:47,502 - dataset_prep - INFO - senkou_span_a: 0.03%
+2024-12-06 19:26:47,503 - dataset_prep - INFO - senkou_span_b: 100.00%
+2024-12-06 19:26:47,503 - dataset_prep - INFO - tenkan_sen: 0.03%
+2024-12-06 19:26:47,504 - dataset_prep - INFO - kijun_sen: 0.03%
+2024-12-06 19:26:49,121 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 19:26:49.117471
+2024-12-06 19:26:49,257 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 19:26:49,290 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1024, 4)
+2024-12-06 19:26:56,170 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1024, 23)
+2024-12-06 19:26:56,171 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2001-01-08 14:15:00+00:00
+2024-12-06 19:26:56,174 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:26:56,174 - dataset_prep - INFO - sma_20: 21.09%
+2024-12-06 19:26:56,174 - dataset_prep - INFO - sma_50: 56.25%
+2024-12-06 19:26:56,175 - dataset_prep - INFO - rsi: 15.23%
+2024-12-06 19:26:56,176 - dataset_prep - INFO - macd: 37.50%
+2024-12-06 19:26:56,176 - dataset_prep - INFO - macd_signal: 37.50%
+2024-12-06 19:26:56,177 - dataset_prep - INFO - macd_hist: 37.50%
+2024-12-06 19:26:56,177 - dataset_prep - INFO - bb_upper: 21.09%
+2024-12-06 19:26:56,178 - dataset_prep - INFO - bb_middle: 21.09%
+2024-12-06 19:26:56,178 - dataset_prep - INFO - bb_lower: 21.09%
+2024-12-06 19:26:56,179 - dataset_prep - INFO - bb_bandwidth: 21.09%
+2024-12-06 19:26:56,179 - dataset_prep - INFO - bb_percent: 21.09%
+2024-12-06 19:26:56,180 - dataset_prep - INFO - atr: 15.23%
+2024-12-06 19:26:56,180 - dataset_prep - INFO - plus_di: 15.23%
+2024-12-06 19:26:56,182 - dataset_prep - INFO - minus_di: 15.23%
+2024-12-06 19:26:56,182 - dataset_prep - INFO - adx: 30.47%
+2024-12-06 19:26:56,185 - dataset_prep - INFO - senkou_span_a: 58.59%
+2024-12-06 19:26:56,186 - dataset_prep - INFO - senkou_span_b: 100.00%
+2024-12-06 19:26:56,187 - dataset_prep - INFO - tenkan_sen: 58.59%
+2024-12-06 19:26:56,189 - dataset_prep - INFO - kijun_sen: 58.59%
+2024-12-06 19:30:36,579 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 19:30:36.579617
+2024-12-06 19:30:38,606 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 19:30:38,609 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1024, 4)
+2024-12-06 19:30:42,693 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1024, 23)
+2024-12-06 19:30:42,693 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2001-01-08 14:15:00+00:00
+2024-12-06 19:30:42,695 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:30:42,695 - dataset_prep - INFO - sma_20: 21.09%
+2024-12-06 19:30:42,695 - dataset_prep - INFO - sma_50: 56.25%
+2024-12-06 19:30:42,696 - dataset_prep - INFO - rsi: 15.23%
+2024-12-06 19:30:42,696 - dataset_prep - INFO - macd: 37.50%
+2024-12-06 19:30:42,696 - dataset_prep - INFO - macd_signal: 37.50%
+2024-12-06 19:30:42,697 - dataset_prep - INFO - macd_hist: 37.50%
+2024-12-06 19:30:42,697 - dataset_prep - INFO - bb_upper: 21.09%
+2024-12-06 19:30:42,697 - dataset_prep - INFO - bb_middle: 21.09%
+2024-12-06 19:30:42,697 - dataset_prep - INFO - bb_lower: 21.09%
+2024-12-06 19:30:42,698 - dataset_prep - INFO - bb_bandwidth: 21.09%
+2024-12-06 19:30:42,698 - dataset_prep - INFO - bb_percent: 21.09%
+2024-12-06 19:30:42,698 - dataset_prep - INFO - atr: 15.23%
+2024-12-06 19:30:42,699 - dataset_prep - INFO - plus_di: 15.23%
+2024-12-06 19:30:42,699 - dataset_prep - INFO - minus_di: 15.23%
+2024-12-06 19:30:42,700 - dataset_prep - INFO - adx: 30.47%
+2024-12-06 19:30:42,700 - dataset_prep - INFO - senkou_span_a: 58.59%
+2024-12-06 19:30:42,700 - dataset_prep - INFO - senkou_span_b: 100.00%
+2024-12-06 19:30:42,700 - dataset_prep - INFO - tenkan_sen: 58.59%
+2024-12-06 19:30:42,701 - dataset_prep - INFO - kijun_sen: 58.59%
+2024-12-06 19:33:12,280 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 19:33:12.280389
+2024-12-06 19:33:14,307 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 19:33:14,310 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1024, 4)
+2024-12-06 19:33:20,469 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1024, 23)
+2024-12-06 19:33:20,470 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2001-01-08 14:15:00+00:00
+2024-12-06 19:33:20,471 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:33:20,471 - dataset_prep - INFO - sma_20: 21.09%
+2024-12-06 19:33:20,472 - dataset_prep - INFO - sma_50: 56.25%
+2024-12-06 19:33:20,472 - dataset_prep - INFO - rsi: 15.23%
+2024-12-06 19:33:20,473 - dataset_prep - INFO - macd: 37.50%
+2024-12-06 19:33:20,473 - dataset_prep - INFO - macd_signal: 37.50%
+2024-12-06 19:33:20,473 - dataset_prep - INFO - macd_hist: 37.50%
+2024-12-06 19:33:20,474 - dataset_prep - INFO - bb_upper: 21.09%
+2024-12-06 19:33:20,474 - dataset_prep - INFO - bb_middle: 21.09%
+2024-12-06 19:33:20,474 - dataset_prep - INFO - bb_lower: 21.09%
+2024-12-06 19:33:20,475 - dataset_prep - INFO - bb_bandwidth: 21.09%
+2024-12-06 19:33:20,475 - dataset_prep - INFO - bb_percent: 21.09%
+2024-12-06 19:33:20,476 - dataset_prep - INFO - atr: 15.23%
+2024-12-06 19:33:20,476 - dataset_prep - INFO - plus_di: 15.23%
+2024-12-06 19:33:20,477 - dataset_prep - INFO - minus_di: 15.23%
+2024-12-06 19:33:20,477 - dataset_prep - INFO - adx: 30.47%
+2024-12-06 19:33:20,477 - dataset_prep - INFO - senkou_span_a: 58.59%
+2024-12-06 19:33:20,477 - dataset_prep - INFO - senkou_span_b: 100.00%
+2024-12-06 19:33:20,478 - dataset_prep - INFO - tenkan_sen: 58.59%
+2024-12-06 19:33:20,478 - dataset_prep - INFO - kijun_sen: 58.59%
+2024-12-06 19:37:39,932 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 19:37:39.931977
+2024-12-06 19:37:40,030 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 19:37:40,040 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1024, 4)
+2024-12-06 19:37:46,323 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1024, 23)
+2024-12-06 19:37:46,324 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2001-01-08 14:15:00+00:00
+2024-12-06 19:37:46,327 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:37:46,327 - dataset_prep - INFO - sma_20: 21.09%
+2024-12-06 19:37:46,328 - dataset_prep - INFO - sma_50: 56.25%
+2024-12-06 19:37:46,328 - dataset_prep - INFO - rsi: 15.23%
+2024-12-06 19:37:46,328 - dataset_prep - INFO - macd: 37.50%
+2024-12-06 19:37:46,329 - dataset_prep - INFO - macd_signal: 37.50%
+2024-12-06 19:37:46,329 - dataset_prep - INFO - macd_hist: 37.50%
+2024-12-06 19:37:46,330 - dataset_prep - INFO - bb_upper: 21.09%
+2024-12-06 19:37:46,330 - dataset_prep - INFO - bb_middle: 21.09%
+2024-12-06 19:37:46,331 - dataset_prep - INFO - bb_lower: 21.09%
+2024-12-06 19:37:46,331 - dataset_prep - INFO - bb_bandwidth: 21.09%
+2024-12-06 19:37:46,331 - dataset_prep - INFO - bb_percent: 21.09%
+2024-12-06 19:37:46,332 - dataset_prep - INFO - atr: 15.23%
+2024-12-06 19:37:46,332 - dataset_prep - INFO - plus_di: 15.23%
+2024-12-06 19:37:46,332 - dataset_prep - INFO - minus_di: 15.23%
+2024-12-06 19:37:46,333 - dataset_prep - INFO - adx: 30.47%
+2024-12-06 19:37:46,333 - dataset_prep - INFO - senkou_span_a: 58.59%
+2024-12-06 19:37:46,333 - dataset_prep - INFO - senkou_span_b: 87.99%
+2024-12-06 19:37:46,334 - dataset_prep - INFO - tenkan_sen: 58.59%
+2024-12-06 19:37:46,334 - dataset_prep - INFO - kijun_sen: 58.59%
+2024-12-06 19:37:46,357 - dataset_prep - INFO - Finished processing for EUR_USD at 2024-12-06 19:37:46.357352
+2024-12-06 19:38:09,305 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 19:38:09.305709
+2024-12-06 19:38:09,345 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 19:38:09,348 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1024, 4)
+2024-12-06 19:38:15,679 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1024, 23)
+2024-12-06 19:38:15,680 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2001-01-08 14:15:00+00:00
+2024-12-06 19:38:15,681 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 19:38:15,681 - dataset_prep - INFO - sma_20: 21.09%
+2024-12-06 19:38:15,682 - dataset_prep - INFO - sma_50: 56.25%
+2024-12-06 19:38:15,682 - dataset_prep - INFO - rsi: 15.23%
+2024-12-06 19:38:15,683 - dataset_prep - INFO - macd: 37.50%
+2024-12-06 19:38:15,683 - dataset_prep - INFO - macd_signal: 37.50%
+2024-12-06 19:38:15,683 - dataset_prep - INFO - macd_hist: 37.50%
+2024-12-06 19:38:15,684 - dataset_prep - INFO - bb_upper: 21.09%
+2024-12-06 19:38:15,684 - dataset_prep - INFO - bb_middle: 21.09%
+2024-12-06 19:38:15,684 - dataset_prep - INFO - bb_lower: 21.09%
+2024-12-06 19:38:15,685 - dataset_prep - INFO - bb_bandwidth: 21.09%
+2024-12-06 19:38:15,685 - dataset_prep - INFO - bb_percent: 21.09%
+2024-12-06 19:38:15,685 - dataset_prep - INFO - atr: 15.23%
+2024-12-06 19:38:15,686 - dataset_prep - INFO - plus_di: 15.23%
+2024-12-06 19:38:15,686 - dataset_prep - INFO - minus_di: 15.23%
+2024-12-06 19:38:15,686 - dataset_prep - INFO - adx: 30.47%
+2024-12-06 19:38:15,687 - dataset_prep - INFO - senkou_span_a: 58.59%
+2024-12-06 19:38:15,687 - dataset_prep - INFO - senkou_span_b: 87.99%
+2024-12-06 19:38:15,687 - dataset_prep - INFO - tenkan_sen: 58.59%
+2024-12-06 19:38:15,688 - dataset_prep - INFO - kijun_sen: 58.59%
+2024-12-06 19:38:15,699 - dataset_prep - INFO - Finished processing for EUR_USD at 2024-12-06 19:38:15.699254
+2024-12-06 19:38:48,174 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-06 19:38:48.174129
+2024-12-06 19:38:52,128 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 19:38:52,788 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1753845, 4)
+2024-12-06 19:46:27,109 - dataset_prep - INFO - Starting processing for EUR_JPY at 2024-12-06 19:46:27.109135
+2024-12-06 19:46:27,715 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-06 19:46:28,503 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (1753543, 4)
+2024-12-06 22:27:05,742 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1753845, 23)
+2024-12-06 22:27:05,750 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2024-11-28 10:15:00+00:00
+2024-12-06 22:27:06,004 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 22:27:06,005 - dataset_prep - INFO - sma_20: 0.01%
+2024-12-06 22:27:06,005 - dataset_prep - INFO - sma_50: 0.03%
+2024-12-06 22:27:06,005 - dataset_prep - INFO - rsi: 0.01%
+2024-12-06 22:27:06,006 - dataset_prep - INFO - macd: 0.02%
+2024-12-06 22:27:06,006 - dataset_prep - INFO - macd_signal: 0.02%
+2024-12-06 22:27:06,007 - dataset_prep - INFO - macd_hist: 0.02%
+2024-12-06 22:27:06,007 - dataset_prep - INFO - bb_upper: 0.01%
+2024-12-06 22:27:06,008 - dataset_prep - INFO - bb_middle: 0.01%
+2024-12-06 22:27:06,008 - dataset_prep - INFO - bb_lower: 0.01%
+2024-12-06 22:27:06,008 - dataset_prep - INFO - bb_bandwidth: 0.01%
+2024-12-06 22:27:06,009 - dataset_prep - INFO - bb_percent: 0.01%
+2024-12-06 22:27:06,009 - dataset_prep - INFO - atr: 0.01%
+2024-12-06 22:27:06,010 - dataset_prep - INFO - plus_di: 0.01%
+2024-12-06 22:27:06,011 - dataset_prep - INFO - minus_di: 0.01%
+2024-12-06 22:27:06,011 - dataset_prep - INFO - adx: 0.02%
+2024-12-06 22:27:06,011 - dataset_prep - INFO - senkou_span_a: 0.03%
+2024-12-06 22:27:06,012 - dataset_prep - INFO - senkou_span_b: 0.05%
+2024-12-06 22:27:06,012 - dataset_prep - INFO - tenkan_sen: 0.03%
+2024-12-06 22:27:06,013 - dataset_prep - INFO - kijun_sen: 0.03%
+2024-12-06 22:27:17,730 - dataset_prep - INFO - Finished processing for EUR_USD at 2024-12-06 22:27:17.730500
+2024-12-06 22:34:57,728 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (1753543, 23)
+2024-12-06 22:34:57,745 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2024-11-28 10:15:00+00:00
+2024-12-06 22:34:57,992 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-06 22:34:57,993 - dataset_prep - INFO - sma_20: 0.01%
+2024-12-06 22:34:57,993 - dataset_prep - INFO - sma_50: 0.03%
+2024-12-06 22:34:57,993 - dataset_prep - INFO - rsi: 0.01%
+2024-12-06 22:34:57,994 - dataset_prep - INFO - macd: 0.02%
+2024-12-06 22:34:57,994 - dataset_prep - INFO - macd_signal: 0.02%
+2024-12-06 22:34:57,994 - dataset_prep - INFO - macd_hist: 0.02%
+2024-12-06 22:34:57,995 - dataset_prep - INFO - bb_upper: 0.01%
+2024-12-06 22:34:57,995 - dataset_prep - INFO - bb_middle: 0.01%
+2024-12-06 22:34:58,000 - dataset_prep - INFO - bb_lower: 0.01%
+2024-12-06 22:34:58,000 - dataset_prep - INFO - bb_bandwidth: 0.01%
+2024-12-06 22:34:58,000 - dataset_prep - INFO - bb_percent: 0.01%
+2024-12-06 22:34:58,001 - dataset_prep - INFO - atr: 0.01%
+2024-12-06 22:34:58,001 - dataset_prep - INFO - plus_di: 0.01%
+2024-12-06 22:34:58,001 - dataset_prep - INFO - minus_di: 0.01%
+2024-12-06 22:34:58,001 - dataset_prep - INFO - adx: 0.02%
+2024-12-06 22:34:58,002 - dataset_prep - INFO - senkou_span_a: 0.03%
+2024-12-06 22:34:58,002 - dataset_prep - INFO - senkou_span_b: 0.05%
+2024-12-06 22:34:58,002 - dataset_prep - INFO - tenkan_sen: 0.03%
+2024-12-06 22:34:58,003 - dataset_prep - INFO - kijun_sen: 0.03%
+2024-12-06 22:35:06,153 - dataset_prep - INFO - Finished processing for EUR_JPY at 2024-12-06 22:35:06.150571
+2024-12-07 17:37:47,488 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-07 17:37:47.488226
+2024-12-07 17:37:51,894 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-07 17:37:51,988 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (118181, 4)
+2024-12-07 17:43:56,157 - dataset_prep - INFO - 
+Final dataset prepared. Shape: (118181, 19)
+2024-12-07 17:43:56,159 - dataset_prep - INFO - Date range: 2001-01-02 23:00:00+00:00 to 2002-08-16 15:20:00+00:00
+2024-12-07 17:43:56,170 - dataset_prep - INFO - 
+Percentage of NaN values in indicator columns:
+2024-12-07 17:43:56,170 - dataset_prep - INFO - sma_20: 100.00%
+2024-12-07 17:43:56,170 - dataset_prep - INFO - sma_50: 100.00%
+2024-12-07 17:43:56,170 - dataset_prep - INFO - rsi: 100.00%
+2024-12-07 17:43:56,171 - dataset_prep - INFO - macd: 100.00%
+2024-12-07 17:43:56,171 - dataset_prep - INFO - macd_signal: 100.00%
+2024-12-07 17:43:56,172 - dataset_prep - INFO - macd_hist: 100.00%
+2024-12-07 17:43:56,172 - dataset_prep - INFO - bb_upper: 100.00%
+2024-12-07 17:43:56,172 - dataset_prep - INFO - bb_middle: 100.00%
+2024-12-07 17:43:56,173 - dataset_prep - INFO - bb_lower: 100.00%
+2024-12-07 17:43:56,174 - dataset_prep - INFO - bb_bandwidth: 100.00%
+2024-12-07 17:43:56,174 - dataset_prep - INFO - bb_percent: 100.00%
+2024-12-07 17:43:56,175 - dataset_prep - INFO - atr: 100.00%
+2024-12-07 17:43:56,175 - dataset_prep - INFO - plus_di: 100.00%
+2024-12-07 17:43:56,175 - dataset_prep - INFO - minus_di: 100.00%
+2024-12-07 17:43:56,176 - dataset_prep - INFO - adx: 100.00%
+2024-12-07 17:49:46,189 - dataset_prep - INFO - Starting processing for EUR_USD at 2024-12-07 17:49:46.189844
+2024-12-07 17:49:46,634 - dataset_prep - INFO - Starting data preparation using row-by-row method...
+2024-12-07 17:49:46,856 - dataset_prep - INFO - Resampled to 5-minute candles. Shape: (648665, 4)

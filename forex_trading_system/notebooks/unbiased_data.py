@@ -2,7 +2,7 @@ from tqdm import tqdm
 import logging
 from data_management.preprocessor import DataPreprocessor
 from data_management.indicator_manager import IndicatorManager
-from stable_baselines3 import PPO
+
 import os
 import sys
 import pandas as pd
@@ -84,6 +84,12 @@ def prepare_unbiased_dataset_row_by_row(
     elif df.index.tz != pytz.UTC:
         df.index = df.index.tz_convert('UTC')
 
+    data_cache_size = 1_000
+    if indicator_timeframe == '1h':
+        data_cache_size = 1_000
+
+    if indicator_timeframe == 'D':
+        data_cache_size = 20_000
     # Create 5-minute OHLC data
     df_5min = df.resample('5min').agg({
         'open': 'first',
@@ -111,8 +117,8 @@ def prepare_unbiased_dataset_row_by_row(
         try:
             # Append current candle to cache
             data_cache.loc[idx] = row
-            if len(data_cache) > 800:
-                data_cache = data_cache.iloc[-800:]
+            if len(data_cache) > data_cache_size:
+                data_cache = data_cache.iloc[-data_cache_size:]
 
             # Get data up to current time
             data_up_to_now = data_cache.loc[:idx]
