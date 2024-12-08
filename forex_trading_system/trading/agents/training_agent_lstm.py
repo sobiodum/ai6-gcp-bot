@@ -184,6 +184,8 @@ class FXTradingTrainer:
         n_startup_trials: int = 5,
         n_evaluations: int = 2,
         eval_freq: int = 5000,
+        n_jobs: int = 1,  # Added parameter for parallel trials
+        show_progress_bar: bool = True,
     ) -> Dict[str, Any]:
         """
         Perform hyperparameter optimization using Optuna.
@@ -233,7 +235,7 @@ class FXTradingTrainer:
                 model.learn(total_timesteps=total_timesteps,
                             callback=eval_callback)
                 # Return negative reward for minimization
-                return -eval_callback.best_mean_reward
+                return eval_callback.best_mean_reward
             except Exception as e:
                 print(f"Trial failed: {e}")
                 return float("-inf")
@@ -242,10 +244,16 @@ class FXTradingTrainer:
         study = optuna.create_study(
             sampler=TPESampler(n_startup_trials=n_startup_trials),
             pruner=MedianPruner(n_startup_trials=n_startup_trials),
+            direction="maximize",
         )
 
         try:
-            study.optimize(objective, n_trials=n_trials)
+            study.optimize(
+                objective,
+                n_trials=n_trials,
+                n_jobs=n_jobs,  # Added n_jobs parameter for parallelization
+                show_progress_bar=show_progress_bar
+            )
         except KeyboardInterrupt:
             pass
 
