@@ -12,17 +12,19 @@ import logging
 from datetime import datetime, timedelta
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
-from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecNormalize, VecCheckNan
 from stable_baselines3.common.utils import get_schedule_fn
 from stable_baselines3.common.monitor import Monitor
 
+
 from ..environments.forex_env import ForexTradingEnv, Actions
+from ..environments.forex_env2_flat import ForexTradingEnv as FX_ENV_FLAT
 
 
 class TrainingStats:
     """Tracks detailed training statistics."""
 
-    def __init__(self,save_dir: Optional[Path] = None):
+    def __init__(self, save_dir: Optional[Path] = None):
         self.save_dir = save_dir or Path("training_stats")
         self.save_dir.mkdir(exist_ok=True)
 
@@ -97,13 +99,14 @@ class TrainingStats:
             'entropy_loss': np.mean(self.losses['entropy_loss'][-window:]),
             'learning_rate': self.learning_rates[-1] if self.learning_rates else None
         }
+
     def save_to_disk(self, filename: Optional[str] = None):
         """Save training statistics to disk."""
         if filename is None:
             filename = f"training_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        
+
         filepath = self.save_dir / filename
-        
+
         stats_dict = {
             'episode_rewards': self.episode_rewards,
             'episode_lengths': self.episode_lengths,
@@ -118,7 +121,7 @@ class TrainingStats:
             'peak_balances': self.peak_balances,
             'timestamps': [ts.isoformat() for ts in self.timestamps]
         }
-        
+
         with open(filepath, 'w') as f:
             json.dump(stats_dict, f, indent=2)
 
@@ -127,7 +130,7 @@ class TrainingStats:
         filepath = self.save_dir / filename
         with open(filepath, 'r') as f:
             stats_dict = json.load(f)
-            
+
         self.episode_rewards = stats_dict['episode_rewards']
         self.episode_lengths = stats_dict['episode_lengths']
         self.trade_counts = stats_dict['trade_counts']
@@ -139,69 +142,71 @@ class TrainingStats:
         self.learning_rates = stats_dict['learning_rates']
         self.balances = stats_dict['balances']
         self.peak_balances = stats_dict['peak_balances']
-        self.timestamps = [datetime.fromisoformat(ts) for ts in stats_dict['timestamps']]
-    
+        self.timestamps = [datetime.fromisoformat(
+            ts) for ts in stats_dict['timestamps']]
+
     def plot_metrics(self, save_path: Optional[str] = None):
         """Plot comprehensive training metrics."""
         fig = plt.figure(figsize=(20, 15))
         gs = fig.add_gridspec(4, 3)
-        
+
         # Performance metrics
         ax1 = fig.add_subplot(gs[0, 0])
         ax1.plot(self.episode_rewards)
         ax1.set_title('Episode Rewards')
-        
+
         ax2 = fig.add_subplot(gs[0, 1])
         ax2.plot(self.balances)
         ax2.plot(self.peak_balances, '--')
         ax2.set_title('Account Balance')
-        
+
         ax3 = fig.add_subplot(gs[0, 2])
         ax3.plot(self.drawdowns)
         ax3.set_title('Drawdown')
-        
+
         # Trading metrics
         ax4 = fig.add_subplot(gs[1, 0])
         ax4.plot(self.trade_counts)
         ax4.set_title('Trades per Episode')
-        
+
         ax5 = fig.add_subplot(gs[1, 1])
         ax5.plot(self.win_rates)
         ax5.set_title('Win Rate')
-        
+
         ax6 = fig.add_subplot(gs[1, 2])
         ax6.plot(self.trade_durations)
         ax6.set_title('Avg Trade Duration')
-        
+
         # Training metrics
         ax7 = fig.add_subplot(gs[2, 0])
         ax7.plot(self.losses['policy_loss'])
         ax7.set_title('Policy Loss')
-        
+
         ax8 = fig.add_subplot(gs[2, 1])
         ax8.plot(self.losses['value_loss'])
         ax8.set_title('Value Loss')
-        
+
         ax9 = fig.add_subplot(gs[2, 2])
         ax9.plot(self.learning_rates)
         ax9.set_title('Learning Rate')
-        
+
         # Position analysis
         ax10 = fig.add_subplot(gs[3, :])
         position_df = pd.DataFrame(self.position_ratios)
         position_df.plot(kind='area', stacked=True, ax=ax10)
         ax10.set_title('Position Distribution')
-        
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path)
-        
+
         return fig
-    
+
+
 class TrainingMonitor(BaseCallback):
     """Monitors and records training progress."""
-    
+
     def __init__(
         self,
         eval_freq: int,
@@ -213,14 +218,13 @@ class TrainingMonitor(BaseCallback):
         self.eval_freq = eval_freq
         self.stats = stats
         self.save_freq = save_freq
-        
-    
+
     def _on_step(self) -> bool:
         try:
             if len(self.model.ep_info_buffer) > 0 and hasattr(self.training_env, 'envs'):
                 info = self.model.ep_info_buffer[-1]
                 env = self.training_env.envs[0].unwrapped
-                
+
                 # Add episode statistics
                 self.stats.add_episode_stats(
                     reward=info['r'],
@@ -233,26 +237,30 @@ class TrainingMonitor(BaseCallback):
                     balance=env.balance,
                     peak_balance=env.peak_balance
                 )
-                
+
                 # Add training statistics
                 if self.model.logger is not None:
                     self.stats.add_training_stats(
-                        policy_loss=self.model.logger.name_to_value.get('policy_loss', 0),
-                        value_loss=self.model.logger.name_to_value.get('value_loss', 0),
-                        entropy_loss=self.model.logger.name_to_value.get('entropy_loss', 0),
+                        policy_loss=self.model.logger.name_to_value.get(
+                            'policy_loss', 0),
+                        value_loss=self.model.logger.name_to_value.get(
+                            'value_loss', 0),
+                        entropy_loss=self.model.logger.name_to_value.get(
+                            'entropy_loss', 0),
                         learning_rate=self.model.learning_rate
                     )
-                
+
                 # Periodic saving
                 if self.n_calls % self.save_freq == 0:
                     self.stats.save_to_disk()
                     # Also save plots
                     self.stats.plot_metrics(
-                        save_path=str(self.stats.save_dir / f"training_plots_{self.n_calls}.png")
+                        save_path=str(self.stats.save_dir /
+                                      f"training_plots_{self.n_calls}.png")
                     )
-            
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error in training monitor: {str(e)}")
             return True
@@ -315,12 +323,13 @@ class TrainingAgent:
 
         while not done:
             action, _ = model.predict(observation, deterministic=True)
-            observation, reward, done, info = env.step(action)  # VecEnv returns 4 values
+            observation, reward, done, info = env.step(
+                action)  # VecEnv returns 4 values
             total_reward += reward[0]  # Get scalar reward from array
-            
+
             # Get info from first environment
             step_info = info[0] if isinstance(info, list) else info
-            
+
             # Track trades
             if step_info.get('trade_closed', False):
                 trades += 1
@@ -329,7 +338,7 @@ class TrainingAgent:
 
         # Get final info from first environment
         final_info = info[0] if isinstance(info, list) else info
-        
+
         return {
             'total_pnl': final_info.get('total_pnl', 0.0),
             'win_rate': final_info.get('win_rate', 0.0),
@@ -338,7 +347,7 @@ class TrainingAgent:
             'total_trades': final_info.get('total_trades', 0),
             'final_balance': final_info.get('balance', 0.0)
         }
-    
+
     def create_env(
         self,
         df: pd.DataFrame,

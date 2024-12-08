@@ -20,7 +20,10 @@ if project_root not in sys.path:
 
 processor = DataPreprocessor()
 indicator_manager = IndicatorManager()
-
+selected_indicators_all = ['sma', 'rsi', 'macd',
+                           'bollinger', 'atr', 'adx', 'dmi',
+                           'ichimoku', 'roc', 'stoch_rsi', 'stoch'
+                           ]
 
 # Setup logging
 logging.basicConfig(
@@ -141,7 +144,9 @@ def prepare_unbiased_dataset_row_by_row(
             if len(period_data) > 0:
                 # Calculate indicators
                 indicators_df = indicator_manager.calculate_indicators_unbiased(
-                    period_data)
+                    df=period_data,
+                    selected_indicators=selected_indicators_all
+                )
 
                 # Get the last row of indicators (most recent)
                 last_indicator_row = indicators_df.iloc[-1]

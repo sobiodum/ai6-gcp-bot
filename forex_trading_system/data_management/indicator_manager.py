@@ -226,6 +226,33 @@ class IndicatorManager:
             'dmi': {'period': 14},
         }
 
+    def add_stoch_rsi(self, df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+        """
+        Calculate Stochastic RSI - combines benefits of both indicators
+        Provides earlier signals than standard RSI while maintaining its trend-following capability
+        """
+        df['stoch_rsi'] = talib.STOCHRSI(df['close'], timeperiod=period)[0]
+        return df
+
+    def add_roc(self, df: pd.DataFrame, period: int = 10) -> pd.DataFrame:
+        """
+        Calculate Rate of Change (ROC) - measures velocity of price changes
+        Unlike other momentum indicators, ROC provides a pure measurement of price velocity
+        """
+        df[f'roc_{period}'] = talib.ROC(df['close'], timeperiod=period)
+        return df
+
+    def add_vortex(self, df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+        """
+        Calculate Vortex Indicator - identifies the start of new trends
+        Particularly useful for trend reversals and pairs well with ADX
+        """
+        df['vortex_pos'] = talib.PLUS_VI(
+            df['high'], df['low'], df['close'], timeperiod=period)
+        df['vortex_neg'] = talib.MINUS_VI(
+            df['high'], df['low'], df['close'], timeperiod=period)
+        return df
+
     def calculate_indicators_unbiased(self, df: pd.DataFrame, selected_indicators: list = None) -> pd.DataFrame:
         """Calculate technical indicators with proper error handling and validation."""
         try:
@@ -260,6 +287,32 @@ class IndicatorManager:
                 indicator_df['macd'] = macd
                 indicator_df['macd_signal'] = signal
                 indicator_df['macd_hist'] = hist
+
+            #! Ab hier neue indicator die noch nicht dabei sindicator
+
+            if 'roc' in selected_indicators:
+                indicator_df = self.add_roc(indicator_df)
+
+            if 'vortex' in selected_indicators:
+                indicator_df = self.add_vortex(indicator_df)
+
+            if 'stoch_rsi' in selected_indicators:
+                indicator_df = self.add_stoch_rsi(indicator_df)
+
+            # Add Stochastic Oscillator
+            if 'stoch' in selected_indicators:
+                slowk, slowd = talib.STOCH(
+                    df['high'].values,
+                    df['low'].values,
+                    df['close'].values,
+                    fastk_period=14,
+                    slowk_period=3,
+                    slowk_matype=0,
+                    slowd_period=3,
+                    slowd_matype=0
+                )
+                indicator_df['stoch_k'] = slowk
+                indicator_df['stoch_d'] = slowd
 
             # Bollinger Bands
             if 'bollinger' in selected_indicators:
