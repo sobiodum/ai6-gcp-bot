@@ -163,7 +163,7 @@ class DataPreprocessor:
         df_normalized = df.copy()
 
         # Add normalized close price
-        start_price = df['close'].iloc[0]
+        # start_price = df['close'].iloc[0]
         #! Out to test
         # df_normalized['price_norm'] = df['close'] / start_price
 
@@ -173,15 +173,18 @@ class DataPreprocessor:
             'bb_upper', 'bb_middle', 'bb_lower',
             'senkou_span_a', 'senkou_span_b',
             'tenkan_sen', 'kijun_sen',
-            'macd', 'macd_signal', 'macd_hist',
             'atr',
             'bb_bandwidth'  # Moved from percentage to price-relative
         ]
 
         percentage_indicators = [
             'rsi', 'bb_percent',  # bb_bandwidth removed from here
-            'plus_di', 'minus_di', 'adx'
+            'plus_di', 'minus_di', 'adx', 'stoch_k', 'stoch_d',
+            'stoch_rsi', 'roc_10', 'di_spread', 'trend_strength'
         ]
+        macd_components = ['macd', 'macd_signal', 'macd_hist']
+
+        initial_window_macd = 20  # About a month of trading days
 
         # Normalize price-relative indicators
         if features is None:
@@ -196,12 +199,47 @@ class DataPreprocessor:
                 df_normalized[feature] = df[feature] / 100.0
                 # print(f"Normalized {feature} by percentage")
 
+            elif feature in macd_components:
+                # Start with a shorter window and gradually increase it
+                rolling_std = df[feature].rolling(
+                    window=initial_window_macd,
+                    min_periods=1
+                ).std()
+
+                # After we have enough data, switch to longer window
+                long_window_std = df[feature].rolling(
+                    window=252,
+                    min_periods=initial_window_macd
+                ).std()
+
+                # Combine short and long window calculations
+                rolling_std = rolling_std.where(
+                    long_window_std.isna(),
+                    long_window_std
+                )
+
+                # Avoid division by zero
+                rolling_std = rolling_std.replace(0, 1)
+
+                df_normalized[feature] = df[feature] / rolling_std
+
             # Skip volume and other unspecified features
             elif feature not in ['open', 'high', 'low', 'close', 'volume']:
                 print(f"Warning: No normalization rule for {feature}")
 
+        # Handle edge cases and infinities AFTER all normalization is complete
+        if 'bb_percent' in df_normalized.columns:
+            df_normalized['bb_percent'] = df_normalized['bb_percent'].replace(
+                [np.inf, -np.inf], [1.5, -0.5]
+            )
+
+        if 'bb_position' in df_normalized.columns:
+            df_normalized['bb_position'] = df_normalized['bb_position'].replace(
+                [np.inf, -np.inf], [1.5, -0.5]
+            )
         # Drop OHLC columns
         # columns_to_drop = ['open', 'high', 'low', 'volume']
         # df_normalized.drop(columns=columns_to_drop, inplace=True)
+        df_normalized.dropna(inplace=True)
 
         return df_normalized

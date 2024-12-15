@@ -183,9 +183,10 @@ class FXTradingTrainer:
         n_trials: int = 10,
         n_startup_trials: int = 5,
         n_evaluations: int = 2,
+        studyname: str = "tpe",
         eval_freq: int = 5000,
         n_jobs: int = 1,  # Added parameter for parallel trials
-        show_progress_bar: bool = True,
+        show_progress_bar: bool = False,
     ) -> Dict[str, Any]:
         """
         Perform hyperparameter optimization using Optuna.
@@ -245,6 +246,9 @@ class FXTradingTrainer:
             sampler=TPESampler(n_startup_trials=n_startup_trials),
             pruner=MedianPruner(n_startup_trials=n_startup_trials),
             direction="maximize",
+            study_name=studyname,
+            storage="sqlite:///optuna_lstm.db",
+            load_if_exists=True,
         )
 
         try:

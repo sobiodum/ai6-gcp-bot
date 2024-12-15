@@ -94,7 +94,7 @@ def prepare_unbiased_dataset_row_by_row(
     if indicator_timeframe == 'D':
         data_cache_size = 20_000
     # Create 5-minute OHLC data
-    df_5min = df.resample('5min').agg({
+    df_5min = df.resample('1h').agg({
         'open': 'first',
         'high': 'max',
         'low': 'min',

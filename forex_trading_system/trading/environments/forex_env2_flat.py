@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 from utils.logging_utils import setup_logging, get_logger
 import numpy as np
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 import gymnasium as gym
 from gymnasium import spaces
 import pandas as pd
@@ -206,8 +206,13 @@ class RewardParams:
 class ForexTradingEnv(gym.Env):
     def __init__(
         self,
-        df: pd.DataFrame,
-        pair: str,
+        # df: pd.DataFrame,
+        # pair: str,
+        # Can be list of paths or dict of pair:path
+        df_paths: Union[List[str], Dict[str, str]],
+        eval_mode: bool = False,  # New parameter to control evaluation mode
+        eval_path: Optional[str] = None,  # Specific path for evaluation
+        pair: str = None,  # Optional - if None, will be extracted from path
         initial_balance: float = 1_000_000.0,
         trading_notional: Optional[TradingPairNotional] = None,
         trade_size: float = 100_000.0,
@@ -226,24 +231,25 @@ class ForexTradingEnv(gym.Env):
         included_features: List[str] = None,
     ):
         super(ForexTradingEnv, self).__init__()
+        # Store paths and configuration
+        self.df_paths = df_paths if isinstance(
+            df_paths, list) else list(df_paths.values())
+        self.eval_mode = eval_mode
+        self.eval_path = eval_path
+        self.current_path = None
 
         self.excluded_features = excluded_features or [
-            'timestamp', 'open', 'high', 'low']
+            'timestamp', 'open', 'high', 'low', 'close']
         self.included_features = included_features
-        self.df = df
+        # self.df = df
         # Basic configuration
         self.pair = pair
         # self.trading_costs = trading_costs or TradingPairCosts()
         # self.transaction_cost = self.trading_costs.get_cost(pair)
-        self.trading_costs = trading_costs or TradingPairCosts1()
-        self.transaction_cost = self.trading_costs.get_cost(pair)
-        self.base_currency, self.quote_currency = pair.split('_')
         self.initial_balance = initial_balance
+        self.current_net_worth = initial_balance
         # Initialize trading notional handler
-        self.trading_notional = trading_notional or TradingPairNotional()
         # Get the correct notional for this pair
-        self.trade_size = self.trading_notional.pair_notional.get(
-            pair, 100_000.0)
         self.max_position_size = max_position_size
         # self.transaction_cost = transaction_cost
         self.reward_scaling = reward_scaling
@@ -255,16 +261,72 @@ class ForexTradingEnv(gym.Env):
         self.net_worth_chg = 0
 
         # Convert DataFrame to structured arrays for faster access
-        self._preprocess_data(df)
+        # self._preprocess_data(df)
         # Pre-compute time-based features
         #! This excluded for now as likely not needed
         # self._precompute_time_features()
 
+        # These will be set after loading the first dataset
+        self.trading_costs = trading_costs or TradingPairCosts1()
+        self.trading_notional = trading_notional or TradingPairNotional()
+        self.transaction_cost = None
+        self.trade_size = None
+        self.base_currency = None
+        self.quote_currency = None
+        #! So war es wenn wir df direkt beim init mitschicken
+        # self.trade_size = self.trading_notional.pair_notional.get(
+        #     pair, 100_000.0)
+        # self.transaction_cost = self.trading_costs.get_cost(pair)
+        # self.base_currency, self.quote_currency = pair.split('_')
+
         # Initialize spaces
+        self._load_random_dataset()
         self._setup_spaces()
 
         # Initialize state variables
         self.reset()
+
+    def _load_random_dataset(self):
+        """Load a random dataset from available paths and setup pair-specific parameters."""
+        try:
+            # Select appropriate dataset path
+            if self.eval_mode and self.eval_path:
+                self.current_path = self.eval_path
+            else:
+                self.current_path = np.random.choice(self.df_paths)
+
+            # Load the dataset
+            self.df = pd.read_parquet(self.current_path)
+
+            # Handle pair determination
+            if self.pair is None:
+                # Extract pair from filename (assuming format like "EUR_USD_train.parquet")
+                filename = os.path.basename(self.current_path)
+                # Split on either _train or _validate to handle both cases
+                pair_part = filename.split('_train')[0].split('_validate')[0]
+                if '_' in pair_part:
+                    self.pair = pair_part
+                else:
+                    raise ValueError(
+                        f"Could not extract pair from filename: {filename}")
+
+            # Now that we have the pair, setup pair-specific parameters
+            if not hasattr(self, 'base_currency') or self.base_currency is None:
+                self.base_currency, self.quote_currency = self.pair.split('_')
+
+            # Update trading parameters
+            self.transaction_cost = self.trading_costs.get_cost(self.pair)
+            self.trade_size = self.trading_notional.pair_notional.get(
+                self.pair, 100_000.0)
+
+            # Process the dataset
+            self._preprocess_data(self.df)
+
+        except Exception as e:
+            logger.error(f"Error loading dataset: {str(e)}")
+            logger.error(f"Current path: {self.current_path}")
+            logger.error(f"Pair: {self.pair}")
+            raise
 
     def reset(
         self,
@@ -273,7 +335,8 @@ class ForexTradingEnv(gym.Env):
     ) -> Tuple[np.ndarray, Dict]:
         """Reset the environment to initial state."""
         super().reset(seed=seed)
-
+        if not self.eval_mode:
+            self._load_random_dataset()
         # Set initial step - use np_random instead of rng
         if self.random_start and len(self.market_data['close']) > self.sequence_length + 100:
             self.current_step = np.random.randint(
@@ -287,6 +350,7 @@ class ForexTradingEnv(gym.Env):
 
         # Reset account state
         self.balance = self.initial_balance
+        self.current_net_worth = self.initial_balance
         self._prev_net_worth = self.balance
         self.position = None
         self.peak_balance = self.initial_balance
@@ -306,15 +370,13 @@ class ForexTradingEnv(gym.Env):
         # Zero out pre-allocated arrays
         self.market_obs.fill(0)
         self.account_obs.fill(0)
-        self.risk_obs.fill(0)
-        self.context_obs.fill(0)
-        self.history_obs.fill(0)
 
         return self._get_observation_hstack(), self._get_info()
 
     def _print_after_episode(self):
         """Print episode summary with corrected metrics."""
-        total_return = ((self.balance / self.initial_balance) - 1) * 100
+        total_return = (
+            (self.current_net_worth / self.initial_balance) - 1) * 100
         win_rate = (self.winning_trades / max(1, self.total_trades)) * 100
 
         logger.info("\nEpisode Summary:")
@@ -324,6 +386,7 @@ class ForexTradingEnv(gym.Env):
         logger.info(f"Winning Trades: {self.winning_trades}")
         logger.info(f"Win Rate: {win_rate:.2f}%")
         logger.info(f"Initial Balance: {self.initial_balance:.2f}")
+        logger.info(f"Final net worth: {self.current_net_worth:.2f}")
         logger.info(f"Final Balance: {self.balance:.2f}")
         logger.info(f"Trade_size: {self.trade_size:.2f}")
         logger.info("-" * 50)
@@ -335,15 +398,12 @@ class ForexTradingEnv(gym.Env):
         reward = 0.0
         # Store previous net worth (balance + unrealized PnL)
         prev_net_worth = self.balance + self.unrealized_pnl
+        print(f'self.balance at step beginning: {self.balance}')
 
         # Store price before stepping
         pre_step_price = self.current_price
         self.current_step += 1
         post_step_price = self.current_price
-
-        if self.balance == 0 or self.initial_balance == 0:
-            logger.info(
-                f"0 Value balance: {self.balance} self.initial_balance: {self.initial_balance} at step: {self.current_step}")
 
         # Handle position transitions
         if action == Actions.NO_POSITION and self.position is not None:
@@ -385,6 +445,7 @@ class ForexTradingEnv(gym.Env):
         # Reward is change in net worth
         self.net_worth_chg = current_net_worth - prev_net_worth
         reward = self.net_worth_chg / self.initial_balance
+        self.current_net_worth += self.net_worth_chg
 
         # Update self._prev_net_worth
         self._prev_net_worth = current_net_worth
@@ -415,61 +476,87 @@ class ForexTradingEnv(gym.Env):
 
     def _preprocess_data(self, df: pd.DataFrame):
         """Convert DataFrame to structured arrays for faster access."""
-        # Store timestamps as integers for faster indexing
-        self.timestamps = np.array(df.index.astype(np.int64))
-        actual_excluded = [
-            col for col in self.excluded_features if col in df.columns]
+        try:
+            # Store timestamps as integers for faster indexing
+            self.timestamps = np.array(df.index.astype(np.int64))
 
-        # Flexible feature selection
-        if self.included_features is not None:
-            # Only use specifically included features
-            self.feature_columns = [
-                col for col in self.included_features if col in df.columns]
-        else:
-            # Use all features except excluded ones that exist in df
-            self.feature_columns = [
-                col for col in df.columns if col not in actual_excluded]
+            # Ensure included_features is a flat list of strings
+            if self.included_features is not None:
+                # Flatten any nested lists and convert to strings
+                flat_features = []
+                features_to_process = self.included_features
 
-        # Log selected features
-        # logger.info(
-        #     f"Selected features for observation space: {self.feature_columns}")
+                # Handle potential nesting
+                while features_to_process:
+                    item = features_to_process.pop(0)
+                    if isinstance(item, (list, tuple)):
+                        features_to_process.extend(item)
+                    else:
+                        flat_features.append(str(item))
 
-        # Set market_features before using it in setup_spaces
-        self.market_features = len(self.feature_columns)
+                # Convert to set after flattening
+                included_set = set(flat_features)
 
-        # Convert market data to numpy arrays
-        self.market_data = {
-            'close': df['close'].values,
-            # 'open': df['open'].values,
-            # 'high': df['high'].values,
-            # 'low': df['low'].values,
-            # 'atr': df['atr'].values if 'atr' in df else np.zeros(len(df))
-        }
+                # Find which features are actually present in the DataFrame
+                available_features = set(df.columns)
+                self.feature_columns = list(
+                    included_set.intersection(available_features))
 
-        self.feature_data = df[self.feature_columns].values
+                # Log if any requested features are missing
+                missing_features = included_set - available_features
+                if missing_features:
+                    logger.warning(
+                        f"Some requested features are missing from the dataset: {missing_features}")
+            else:
+                # Use all features except excluded ones
+                excluded_set = set(self.excluded_features or [])
+                self.feature_columns = [
+                    col for col in df.columns if col not in excluded_set]
 
-        # Pre-allocate arrays for faster observation construction
-        self.market_obs = np.zeros(
-            (self.sequence_length, len(self.feature_columns)))
-        self.account_obs = np.zeros(7)
-        self.risk_obs = np.zeros(5)
-        # 4 for time encoding + 3 for session
-        self.context_obs = np.zeros(7, dtype=np.float32)
-        self.history_obs = np.zeros(5)
+            # Verify we have features to work with
+            if not self.feature_columns:
+                raise ValueError("No valid features found in the dataset!")
 
-        if np.any(np.isnan(self.feature_data)) or np.any(np.isinf(self.feature_data)):
-            # Identify columns with NaN or Inf values
-            nan_columns = df[self.feature_columns].columns[df[self.feature_columns].isnull(
-            ).any()].tolist()
-            inf_columns = df[self.feature_columns].columns[np.isinf(
-                df[self.feature_columns]).any()].tolist()
+            # Log selected features
+            logger.info(
+                f"Selected features ({len(self.feature_columns)}): {self.feature_columns}")
 
-            logger.info(f"Feature data contains NaN or Inf values.")
-            if nan_columns:
-                logger.info(f"Columns with NaN values: {nan_columns}")
-            if inf_columns:
-                logger.info(f"Columns with infinite values: {inf_columns}")
-            raise ValueError("Feature data contains NaN or Inf values")
+            # Set market_features before using it in setup_spaces
+            self.market_features = len(self.feature_columns)
+
+            # Convert market data to numpy arrays
+            self.market_data = {
+                'close': df['price_norm'].values if 'price_norm' in df else df['close'].values,
+            }
+
+            # Store feature data
+            self.feature_data = df[self.feature_columns].values
+
+            # Validate feature data
+            if np.any(np.isnan(self.feature_data)) or np.any(np.isinf(self.feature_data)):
+                nan_columns = [col for col, has_nan in zip(
+                    self.feature_columns, np.any(np.isnan(self.feature_data), axis=0)) if has_nan]
+                inf_columns = [col for col, has_inf in zip(
+                    self.feature_columns, np.any(np.isinf(self.feature_data), axis=0)) if has_inf]
+
+                error_msg = "Feature data contains invalid values:\n"
+                if nan_columns:
+                    error_msg += f"Columns with NaN: {nan_columns}\n"
+                if inf_columns:
+                    error_msg += f"Columns with Inf: {inf_columns}\n"
+                raise ValueError(error_msg)
+
+            # Pre-allocate observation arrays
+            self.market_obs = np.zeros(
+                (self.sequence_length, len(self.feature_columns)))
+            # Simplified to balance and position only
+            self.account_obs = np.zeros(2)
+
+        except Exception as e:
+            logger.error(f"Error in _preprocess_data: {str(e)}")
+            logger.error(f"DataFrame columns: {df.columns.tolist()}")
+            logger.error(f"Included features: {self.included_features}")
+            raise
 
     def _precompute_time_features(self):
         """Pre-compute time-based features for all timestamps."""
@@ -868,6 +955,7 @@ class ForexTradingEnv(gym.Env):
         # transaction_cost = self.transaction_cost * self.trade_size / current_price
         transaction_cost = self._calculate_transaction_cost(current_price)
         self.balance -= transaction_cost
+        self.total_pnl -= transaction_cost
 
         # Add transaction costs
         # if position_type == 'long':
@@ -894,6 +982,7 @@ class ForexTradingEnv(gym.Env):
         transaction_cost = self._calculate_transaction_cost(current_price)
         # Deduct transaction cost from balance
         self.balance -= transaction_cost
+        self.total_pnl -= transaction_cost
         # Calculate PnL with transaction costs
         exit_price = current_price
         # if self.position.type == 'long':
@@ -1046,6 +1135,7 @@ class ForexTradingEnv(gym.Env):
             peak_balance if peak_balance > 0 else 0.0
         info = {
             # Account metrics
+            'net_worth': self.current_net_worth,
             'balance': self.balance,
             'net_worth_chg': self.net_worth_chg,
             'total_pnl': self.total_pnl,
