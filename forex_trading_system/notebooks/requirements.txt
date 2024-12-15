@@ -1,0 +1,8 @@
+stable-baselines3[extra]
+sb3-contrib
+pandas
+pyarrow
+tensorboard
+gymnasium
+numpy
+matplotlib
